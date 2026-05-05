@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReceiptWise.App.ViewModels"
+             x:Class="ReceiptWise.App.Views.CaptureReceiptPage"
+             Title="{Binding Title}"
+             x:DataType="vm:CaptureReceiptViewModel">
+
+    <VerticalStackLayout 
+        Padding="20" 
+        Spacing="20"
+        VerticalOptions="Center">
+
+        <Image 
+            Source="camera_placeholder.png"
+            HeightRequest="200"
+            Aspect="AspectFit" />
+
+        <Label 
+            Text="Capture or import a receipt"
+            FontSize="24"
+            FontAttributes="Bold"
+            HorizontalOptions="Center" />
+
+        <Button 
+            Text="📷 Take Photo"
+            Command="{Binding TakePhotoCommand}"
+            BackgroundColor="{StaticResource Primary}"
+            CornerRadius="10"
+            HeightRequest="50" />
+
+        <Button 
+            Text="📁 Import File"
+            Command="{Binding PickFileCommand}"
+            BackgroundColor="{StaticResource Secondary}"
+            CornerRadius="10"
+            HeightRequest="50" />
+
+        <Label 
+            Text="Coming in Milestone 3"
+            FontSize="12"
+            TextColor="Gray"
+            HorizontalOptions="Center"
+            Margin="0,20,0,0" />
+
+    </VerticalStackLayout>
+</ContentPage>

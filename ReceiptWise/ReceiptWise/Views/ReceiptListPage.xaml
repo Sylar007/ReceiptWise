@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReceiptWise.App.ViewModels"
+             xmlns:models="clr-namespace:ReceiptWise.Core.Models.Domain;assembly=ReceiptWise.Core"
+             x:Class="ReceiptWise.App.Views.ReceiptListPage"
+             Title="{Binding Title}"
+             x:DataType="vm:ReceiptListViewModel">
+
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+            EventName="Appearing"
+            Command="{Binding LoadReceiptsCommand}" />
+    </ContentPage.Behaviors>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Search Bar -->
+        <SearchBar 
+            Grid.Row="0"
+            Placeholder="Search receipts..."
+            Text="{Binding SearchText}"
+            SearchCommand="{Binding SearchCommand}"
+            Margin="10" />
+
+        <!-- Receipt List -->
+        <RefreshView 
+            Grid.Row="1"
+            IsRefreshing="{Binding IsBusy}"
+            Command="{Binding LoadReceiptsCommand}">
+
+            <CollectionView 
+                ItemsSource="{Binding Receipts}"
+                SelectionMode="None"
+                EmptyView="No receipts found">
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Receipt">
+                        <Frame 
+                            Margin="10,5"
+                            Padding="15"
+                            CornerRadius="10"
+                            HasShadow="True">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer 
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ReceiptListViewModel}}, Path=ViewDetailCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Frame.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+
+                                <Label 
+                                    Grid.Row="0" Grid.Column="0"
+                                    Text="{Binding MerchantName}"
+                                    FontSize="18"
+                                    FontAttributes="Bold" />
+
+                                <Label 
+                                    Grid.Row="0" Grid.Column="1"
+                                    Text="{Binding Total, StringFormat='${0:F2}'}"
+                                    FontSize="18"
+                                    FontAttributes="Bold"
+                                    TextColor="{StaticResource Primary}"
+                                    HorizontalOptions="End" />
+
+                                <Label 
+                                    Grid.Row="1" Grid.Column="0"
+                                    Text="{Binding TransactionDate, StringFormat='{0:MMM dd, yyyy}'}"
+                                    FontSize="14"
+                                    TextColor="Gray" />
+
+                                <Label 
+                                    Grid.Row="2" Grid.Column="0"
+                                    Text="{Binding Category}"
+                                    FontSize="12"
+                                    TextColor="{StaticResource Secondary}" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

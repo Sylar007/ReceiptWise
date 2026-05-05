@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="ReceiptWise.App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:ReceiptWise.App.Views"
+    Shell.FlyoutBehavior="Flyout">
+
+    <!-- Tab Bar -->
+    <TabBar>
+        <ShellContent
+            Title="Home"
+            Icon="home.png"
+            ContentTemplate="{DataTemplate views:HomePage}"
+            Route="HomePage" />
+
+        <ShellContent
+            Title="Receipts"
+            Icon="receipt.png"
+            ContentTemplate="{DataTemplate views:ReceiptListPage}"
+            Route="ReceiptListPage" />
+
+        <ShellContent
+            Title="Capture"
+            Icon="camera.png"
+            ContentTemplate="{DataTemplate views:CaptureReceiptPage}"
+            Route="CaptureReceiptPage" />
+
+        <ShellContent
+            Title="Insights"
+            Icon="chart.png"
+            ContentTemplate="{DataTemplate views:InsightsPage}"
+            Route="InsightsPage" />
+
+        <ShellContent
+            Title="Settings"
+            Icon="settings.png"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="SettingsPage" />
+    </TabBar>
+
+</Shell>

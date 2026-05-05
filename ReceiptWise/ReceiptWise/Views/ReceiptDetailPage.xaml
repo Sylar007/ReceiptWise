@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReceiptWise.App.ViewModels"
+             x:Class="ReceiptWise.App.Views.ReceiptDetailPage"
+             Title="{Binding Title}"
+             x:DataType="vm:ReceiptDetailViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator 
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                Color="{StaticResource Primary}"
+                HeightRequest="50" />
+
+            <!-- Error Message -->
+            <Frame 
+                IsVisible="{Binding HasError}"
+                BackgroundColor="#FFEBEE"
+                BorderColor="#F44336"
+                Padding="10"
+                CornerRadius="5">
+                <Label 
+                    Text="{Binding ErrorMessage}"
+                    TextColor="#D32F2F" />
+            </Frame>
+
+            <!-- Receipt Details -->
+            <Frame 
+                IsVisible="{Binding Receipt, Converter={StaticResource IsNotNullConverter}}"
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+
+                    <Label 
+                        Text="{Binding Receipt.MerchantName}"
+                        FontSize="24"
+                        FontAttributes="Bold" />
+
+                    <Label 
+                        Text="{Binding Receipt.Total, StringFormat='Total: ${0:F2}'}"
+                        FontSize="28"
+                        TextColor="{StaticResource Primary}" />
+
+                    <Label 
+                        Text="{Binding Receipt.TransactionDate, StringFormat='Date: {0:MMM dd, yyyy}'}"
+                        FontSize="16"
+                        TextColor="Gray" />
+
+                    <Label 
+                        Text="{Binding Receipt.Category, StringFormat='Category: {0}'}"
+                        FontSize="14"
+                        TextColor="{StaticResource Secondary}" />
+
+                    <BoxView 
+                        HeightRequest="1"
+                        Color="LightGray"
+                        Margin="0,10" />
+
+                    <Label 
+                        Text="{Binding Receipt.Tax, StringFormat='Tax: ${0:F2}'}"
+                        FontSize="14" />
+
+                    <Label 
+                        Text="{Binding Receipt.Subtotal, StringFormat='Subtotal: ${0:F2}'}"
+                        FontSize="14" />
+
+                    <Label 
+                        Text="{Binding Receipt.Notes}"
+                        FontSize="14"
+                        IsVisible="{Binding Receipt.Notes, Converter={StaticResource IsNotNullConverter}}"
+                        Margin="0,10,0,0" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Actions -->
+            <Button 
+                Text="🗑️ Delete Receipt"
+                Command="{Binding DeleteReceiptCommand}"
+                BackgroundColor="Red"
+                TextColor="White"
+                CornerRadius="10"
+                Margin="0,20,0,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
