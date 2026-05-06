@@ -1,12 +1,12 @@
-﻿using CommunityToolkit.Maui;
-using Microsoft.Extensions.Logging;
-using ReceiptWise.App.ViewModels;
+﻿using Microsoft.Extensions.Logging;
+using CommunityToolkit.Maui;
 using ReceiptWise.App.Views;
+using ReceiptWise.App.ViewModels;
 using ReceiptWise.Core.Interfaces.Repositories;
 using ReceiptWise.Data.Context;
 using ReceiptWise.Data.Repositories;
+using ReceiptWise.Data.Seed;
 using SkiaSharp.Views.Maui.Controls.Hosting;
-using Windows.UI.ApplicationSettings;
 
 namespace ReceiptWise.App;
 
@@ -31,12 +31,19 @@ public static class MauiProgram
 
         // Register Database
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "receiptwise.db3");
-        builder.Services.AddSingleton(new ReceiptWiseDatabase(dbPath));
+        builder.Services.AddSingleton(sp =>
+        {
+            var logger = sp.GetService<ILogger<ReceiptWiseDatabase>>();
+            return new ReceiptWiseDatabase(dbPath, logger);
+        });
 
         // Register Repositories
         builder.Services.AddSingleton<IReceiptRepository, ReceiptRepository>();
         builder.Services.AddSingleton<ICategoryRepository, CategoryRepository>();
         builder.Services.AddSingleton<IAttachmentRepository, AttachmentRepository>();
+
+        // Register Seeder (for development/testing)
+        builder.Services.AddSingleton<SampleDataSeeder>();
 
         // Register ViewModels
         builder.Services.AddTransient<HomeViewModel>();
@@ -54,8 +61,9 @@ public static class MauiProgram
         builder.Services.AddTransient<InsightsPage>();
         builder.Services.AddTransient<SettingsPage>();
 
-        // Initialize categories on startup
         var app = builder.Build();
+
+        // Initialize database on startup
         InitializeDatabaseAsync(app.Services).Wait();
 
         return app;
@@ -63,7 +71,33 @@ public static class MauiProgram
 
     private static async Task InitializeDatabaseAsync(IServiceProvider services)
     {
-        var categoryRepo = services.GetRequiredService<ICategoryRepository>();
-        await categoryRepo.InitializeDefaultCategoriesAsync();
+        try
+        {
+            var database = services.GetRequiredService<ReceiptWiseDatabase>();
+            await database.InitializeAsync();
+
+            var categoryRepo = services.GetRequiredService<ICategoryRepository>();
+            await categoryRepo.InitializeDefaultCategoriesAsync();
+
+            // Seed sample data in DEBUG mode only
+#if DEBUG
+            var seeder = services.GetRequiredService<SampleDataSeeder>();
+            var receiptRepo = services.GetRequiredService<IReceiptRepository>();
+            var count = await receiptRepo.GetCountAsync();
+
+            if (count == 0)
+            {
+                await seeder.SeedSampleReceiptsAsync(15);
+                var logger = services.GetService<ILogger<ReceiptWiseDatabase>>();
+                logger?.LogInformation("Seeded 15 sample receipts for development");
+            }
+#endif
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetService<ILogger<ReceiptWiseDatabase>>();
+            logger?.LogError(ex, "Failed to initialize database");
+            throw;
+        }
     }
 }

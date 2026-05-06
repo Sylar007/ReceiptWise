@@ -1,4 +1,5 @@
 ﻿using Foundation;
+using ReceiptWise.App;
 
 namespace ReceiptWise
 {

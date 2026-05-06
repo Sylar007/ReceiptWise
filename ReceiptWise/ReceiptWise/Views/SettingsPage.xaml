@@ -6,6 +6,13 @@
              Title="{Binding Title}"
              x:DataType="vm:SettingsViewModel">
 
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+            EventName="Appearing"
+            Command="{Binding LoadDatabaseStatsCommand}" />
+    </ContentPage.Behaviors>
+
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
 
@@ -26,6 +33,59 @@
                             Grid.Column="1"
                             IsToggled="{Binding AiEnabled}" />
                     </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Database Stats -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label 
+                        Text="Database Statistics"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="5">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Total Receipts:" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding ReceiptCount}" FontAttributes="Bold" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Database Size:" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding DatabaseSizeKB, StringFormat='{0} KB'}" FontAttributes="Bold" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Path:" FontSize="10" TextColor="Gray" Grid.ColumnSpan="2" />
+                    </Grid>
+
+                    <Label 
+                        Text="{Binding DatabasePath}"
+                        FontSize="9"
+                        TextColor="Gray"
+                        LineBreakMode="TailTruncation" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Developer Tools -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True" BackgroundColor="#FFF3E0">
+                <VerticalStackLayout Spacing="10">
+                    <Label 
+                        Text="🛠️ Developer Tools"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <Button 
+                        Text="Seed Sample Data (20 receipts)"
+                        Command="{Binding SeedSampleDataCommand}"
+                        BackgroundColor="#4CAF50" />
+
+                    <Button 
+                        Text="Clear All Data"
+                        Command="{Binding ClearAllDataCommand}"
+                        BackgroundColor="#F44336"
+                        TextColor="White" />
+
+                    <Label 
+                        Text="⚠️ Developer mode enabled in DEBUG build"
+                        FontSize="12"
+                        TextColor="#FF6F00"
+                        HorizontalOptions="Center" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -60,8 +120,18 @@
                         Text="{Binding AppVersion, StringFormat='Version: {0}'}"
                         FontSize="14"
                         TextColor="Gray" />
+                    <Label 
+                        Text="Built with .NET MAUI 8"
+                        FontSize="12"
+                        TextColor="Gray" />
                 </VerticalStackLayout>
             </Frame>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator 
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                Color="{StaticResource Primary}" />
 
         </VerticalStackLayout>
     </ScrollView>

@@ -3,6 +3,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ReceiptWise.App.Views;
 using ReceiptWise.Core.Interfaces.Repositories;
 using ReceiptWise.Core.Models.Domain;
 
