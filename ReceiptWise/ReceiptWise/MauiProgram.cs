@@ -3,9 +3,12 @@ using CommunityToolkit.Maui;
 using ReceiptWise.App.Views;
 using ReceiptWise.App.ViewModels;
 using ReceiptWise.Core.Interfaces.Repositories;
+using ReceiptWise.Core.Interfaces.Services;
 using ReceiptWise.Data.Context;
 using ReceiptWise.Data.Repositories;
 using ReceiptWise.Data.Seed;
+using ReceiptWise.Services.Infrastructure;
+using ReceiptWise.Services.Helpers;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace ReceiptWise.App;
@@ -41,6 +44,12 @@ public static class MauiProgram
         builder.Services.AddSingleton<IReceiptRepository, ReceiptRepository>();
         builder.Services.AddSingleton<ICategoryRepository, CategoryRepository>();
         builder.Services.AddSingleton<IAttachmentRepository, AttachmentRepository>();
+
+        // Register Services
+        builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
+
+        // Register Helpers
+        builder.Services.AddSingleton<ImageHelper>();
 
         // Register Seeder (for development/testing)
         builder.Services.AddSingleton<SampleDataSeeder>();

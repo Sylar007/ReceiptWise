@@ -26,6 +26,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\ReceiptWise.Core\ReceiptWise.Core.csproj" />
 	  <ProjectReference Include="..\ReceiptWise.Data\ReceiptWise.Data.csproj" />
+	  <ProjectReference Include="..\ReceiptWise.Services\ReceiptWise.Services.csproj" />
 	</ItemGroup>
 
 </Project>
