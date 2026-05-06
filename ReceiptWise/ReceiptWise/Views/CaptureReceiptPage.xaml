@@ -44,6 +44,13 @@
                 Color="{StaticResource Primary}"
                 HeightRequest="50" />
 
+            <!-- Processing Progress -->
+            <ProgressBar 
+                Progress="{Binding ProcessingProgress}"
+                IsVisible="{Binding IsProcessing}"
+                ProgressColor="{StaticResource Primary}"
+                HeightRequest="10" />
+
             <!-- Image Preview -->
             <Frame 
                 IsVisible="{Binding HasImage}"
@@ -103,23 +110,23 @@
                     FontSize="16" />
 
                 <Button 
-                    Grid.Row="1" Grid.Column="0"
-                    Text="💾 Save Receipt"
-                    Command="{Binding SaveManualReceiptCommand}"
+                    Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                    Text="🤖 Extract with AI"
+                    Command="{Binding ProcessWithAICommand}"
                     BackgroundColor="#4CAF50"
+                    TextColor="White"
                     IsEnabled="{Binding HasImage}"
                     HeightRequest="60"
-                    FontSize="16" />
-
-                <Button 
-                    Grid.Row="1" Grid.Column="1"
-                    Text="🗑️ Clear"
-                    Command="{Binding ClearCaptureCommand}"
-                    BackgroundColor="Gray"
-                    IsEnabled="{Binding HasImage}"
-                    HeightRequest="60"
-                    FontSize="16" />
+                    FontSize="18"
+                    FontAttributes="Bold" />
             </Grid>
+
+            <Button 
+                Text="🗑️ Clear"
+                Command="{Binding ClearCaptureCommand}"
+                BackgroundColor="Gray"
+                IsEnabled="{Binding HasImage}"
+                HeightRequest="50" />
 
             <!-- Instructions -->
             <Frame 
@@ -133,19 +140,19 @@
                         FontAttributes="Bold"
                         TextColor="#1976D2" />
                     <Label 
-                        Text="1. Tap Camera to take a photo"
+                        Text="1. Capture or import a receipt image"
                         FontSize="14"
                         TextColor="#1976D2" />
                     <Label 
-                        Text="2. Or tap Import to select from gallery"
+                        Text="2. Tap 'Extract with AI' button"
                         FontSize="14"
                         TextColor="#1976D2" />
                     <Label 
-                        Text="3. Review the image preview"
+                        Text="3. AI will extract merchant, date, total, items"
                         FontSize="14"
                         TextColor="#1976D2" />
                     <Label 
-                        Text="4. Tap Save to store the receipt"
+                        Text="4. Receipt saved automatically"
                         FontSize="14"
                         TextColor="#1976D2" />
                     <BoxView 
@@ -153,7 +160,7 @@
                         Color="#1976D2"
                         Margin="0,5" />
                     <Label 
-                        Text="⚡ AI extraction coming in Milestone 4"
+                        Text="⚡ Powered by Azure Document Intelligence"
                         FontSize="12"
                         FontAttributes="Italic"
                         TextColor="Gray"

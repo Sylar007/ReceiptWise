@@ -4,19 +4,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReceiptWise.Core.Interfaces.Services;
 using ReceiptWise.Core.Interfaces.Repositories;
-using ReceiptWise.Core.Models.Domain;
-using ReceiptWise.Core.Enums;
+using ReceiptWise.Services.Business;
 using ReceiptWise.Services.Helpers;
 
 /// <summary>
 /// ViewModel for Capture Receipt page
-/// Handles camera capture and file import
+/// Enhanced with AI extraction
 /// </summary>
 public partial class CaptureReceiptViewModel : BaseViewModel
 {
-    private readonly IFileStorageService _fileStorageService;
-    private readonly IReceiptRepository _receiptRepository;
-    private readonly IAttachmentRepository _attachmentRepository;
+    private readonly ReceiptProcessingService _processingService;
     private readonly ImageHelper _imageHelper;
 
     [ObservableProperty]
@@ -26,20 +23,25 @@ public partial class CaptureReceiptViewModel : BaseViewModel
     private string? _capturedFilePath;
 
     [ObservableProperty]
+    private FileResult? _capturedFile;
+
+    [ObservableProperty]
     private bool _hasImage;
 
     [ObservableProperty]
     private string _statusMessage = "Ready to capture";
 
+    [ObservableProperty]
+    private bool _isProcessing;
+
+    [ObservableProperty]
+    private int _processingProgress; // 0-100
+
     public CaptureReceiptViewModel(
-        IFileStorageService fileStorageService,
-        IReceiptRepository receiptRepository,
-        IAttachmentRepository attachmentRepository,
+        ReceiptProcessingService processingService,
         ImageHelper imageHelper)
     {
-        _fileStorageService = fileStorageService;
-        _receiptRepository = receiptRepository;
-        _attachmentRepository = attachmentRepository;
+        _processingService = processingService;
         _imageHelper = imageHelper;
         Title = "Capture Receipt";
     }
@@ -155,7 +157,7 @@ public partial class CaptureReceiptViewModel : BaseViewModel
             var fileName = fileResult.FileName;
             var mimeType = ImageHelper.GetMimeType(fileName);
 
-            // Validate if it's an image (skip PDF validation for now)
+            // Validate if it's an image
             if (mimeType.StartsWith("image/") && !_imageHelper.IsValidImage(stream))
             {
                 SetError("Invalid image file");
@@ -163,33 +165,19 @@ public partial class CaptureReceiptViewModel : BaseViewModel
                 return;
             }
 
-            // Compress image if needed
+            // Store for preview
+            CapturedFile = fileResult;
+            stream.Position = 0;
+
             if (mimeType.StartsWith("image/"))
             {
-                stream = await _imageHelper.CompressImageAsync(stream);
+                var bytes = new byte[stream.Length];
+                await stream.ReadAsync(bytes);
+                CapturedImage = ImageSource.FromStream(() => new MemoryStream(bytes));
             }
 
-            // Save file to local storage
-            var savedPath = await _fileStorageService.SaveFileAsync(stream, fileName);
-
-            // Generate thumbnail for images
-            string? thumbnailPath = null;
-            if (mimeType.StartsWith("image/"))
-            {
-                var thumbnailStream = await _imageHelper.GenerateThumbnailAsync(stream);
-                thumbnailPath = await _fileStorageService.SaveThumbnailAsync(thumbnailStream, fileName);
-            }
-
-            // Update UI
-            CapturedFilePath = savedPath;
-            CapturedImage = ImageSource.FromFile(savedPath);
             HasImage = true;
-            StatusMessage = $"File captured: {fileName}";
-
-            await Shell.Current.DisplayAlert(
-                "Success",
-                "Receipt captured! Next: AI extraction will be implemented in Milestone 4.",
-                "OK");
+            StatusMessage = $"File ready: {fileName}";
         }
         catch (Exception ex)
         {
@@ -199,10 +187,9 @@ public partial class CaptureReceiptViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private async Task SaveManualReceiptAsync()
+    private async Task ProcessWithAIAsync()
     {
-        // Placeholder for manual entry (Milestone 6)
-        if (!HasImage)
+        if (CapturedFile == null)
         {
             await Shell.Current.DisplayAlert("No Image", "Please capture or import a receipt first", "OK");
             return;
@@ -210,56 +197,65 @@ public partial class CaptureReceiptViewModel : BaseViewModel
 
         try
         {
+            IsProcessing = true;
             IsBusy = true;
-            StatusMessage = "Saving receipt...";
+            ProcessingProgress = 0;
+            ClearError();
 
-            // Create a manual receipt entry
-            var receipt = new Receipt
+            StatusMessage = "🤖 Extracting data with AI...";
+            ProcessingProgress = 25;
+
+            var stream = await CapturedFile.OpenReadAsync();
+
+            ProcessingProgress = 50;
+            StatusMessage = "📊 Analyzing receipt...";
+
+            var result = await _processingService.ProcessReceiptAsync(
+                stream,
+                CapturedFile.FileName);
+
+            ProcessingProgress = 100;
+
+            if (result.Success)
             {
-                MerchantName = "Manual Entry",
-                TransactionDate = DateTime.Now,
-                Total = 0,
-                Tax = 0,
-                Subtotal = 0,
-                Currency = CurrencyCode.USD,
-                Category = ReceiptCategory.Other,
-                ExtractionStatus = ExtractionStatus.Pending,
-                Notes = "Captured image - awaiting AI extraction"
-            };
+                StatusMessage = "✅ Receipt processed successfully!";
 
-            var receiptId = await _receiptRepository.AddAsync(receipt);
+                var extraction = result.ExtractionResult;
+                var message = $"Merchant: {extraction?.MerchantName}\n" +
+                             $"Total: ${extraction?.Total:F2}\n" +
+                             $"Date: {extraction?.TransactionDate:MMM dd, yyyy}\n" +
+                             $"Items: {extraction?.Items.Count ?? 0}\n" +
+                             $"Confidence: {extraction?.Confidence:P0}";
 
-            // Save attachment
-            if (!string.IsNullOrEmpty(CapturedFilePath))
-            {
-                var attachment = new Attachment
-                {
-                    ReceiptId = receiptId,
-                    FileName = Path.GetFileName(CapturedFilePath),
-                    FilePath = CapturedFilePath,
-                    FileType = ImageHelper.GetMimeType(CapturedFilePath),
-                    FileSizeBytes = new FileInfo(CapturedFilePath).Length
-                };
+                await Shell.Current.DisplayAlert("Success!", message, "OK");
 
-                await _attachmentRepository.AddAsync(attachment);
+                // Navigate to receipt detail
+                await Shell.Current.GoToAsync($"//ReceiptListPage");
             }
+            else
+            {
+                StatusMessage = $"⚠️ {result.ErrorMessage}";
+                SetError(result.ErrorMessage ?? "Processing failed");
 
-            await Shell.Current.DisplayAlert("Success", "Receipt saved! AI extraction coming in Milestone 4.", "OK");
-
-            // Reset form
-            CapturedImage = null;
-            CapturedFilePath = null;
-            HasImage = false;
-            StatusMessage = "Ready to capture";
+                if (result.Status == ProcessingStatus.SavedAsManual)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Saved as Manual Entry",
+                        "AI extraction failed, but the receipt was saved. You can edit it manually from the receipts list.",
+                        "OK");
+                }
+            }
         }
         catch (Exception ex)
         {
-            SetError($"Failed to save receipt: {ex.Message}");
-            StatusMessage = "Save failed";
+            SetError($"AI processing failed: {ex.Message}");
+            StatusMessage = "❌ Processing failed";
         }
         finally
         {
+            IsProcessing = false;
             IsBusy = false;
+            ProcessingProgress = 0;
         }
     }
 
@@ -268,7 +264,9 @@ public partial class CaptureReceiptViewModel : BaseViewModel
     {
         CapturedImage = null;
         CapturedFilePath = null;
+        CapturedFile = null;
         HasImage = false;
+        ProcessingProgress = 0;
         StatusMessage = "Ready to capture";
         ClearError();
     }

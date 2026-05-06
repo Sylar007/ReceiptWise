@@ -1,4 +1,4 @@
-# ReceiptWise - Platform Permissions Guide
+﻿# ReceiptWise - Platform Permissions Guide
 
 ## Overview
 ReceiptWise requires specific permissions to access device features for receipt capture.
@@ -9,7 +9,7 @@ ReceiptWise requires specific permissions to access device features for receipt 
 
 ### Required Permissions
 Defined in `Platforms/Android/AndroidManifest.xml`:
-
+<uses-permission android:name="android.permission.CAMERA" /> <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /> <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" /> <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" /> <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
 ### Permission Handling
 
@@ -32,10 +32,20 @@ Defined in `Platforms/Android/AndroidManifest.xml`:
 
 ---
 
+Grant camera permission manually
+adb shell pm grant com.receiptwise.app android.permission.CAMERA
+Revoke permission
+adb shell pm revoke com.receiptwise.app android.permission.CAMERA
+Check permission status
+adb shell dumpsys package com.receiptwise.app | grep permission
+
 ## iOS Permissions
 
 ### Required Keys
 Defined in `Platforms/iOS/Info.plist`:
+<key>NSCameraUsageDescription</key> <string>This app needs access to the camera to capture receipt images</string>
+<key>NSPhotoLibraryUsageDescription</key> <string>This app needs access to photos to import receipt images</string>
+<key>NSPhotoLibraryAddUsageDescription</key> <string>This app needs permission to save receipt images to your photo library</string>
 
 ### Permission Handling
 - **First Request**: iOS shows system permission dialog with custom message
@@ -45,6 +55,7 @@ Defined in `Platforms/iOS/Info.plist`:
 ### Testing Permissions
 
 Reset permissions in iOS Simulator:
+Settings → Privacy & Security → Camera → Reset Location & Privacy
 
 ---
 
@@ -52,22 +63,22 @@ Reset permissions in iOS Simulator:
 
 ### Required Entitlements
 Add to `Platforms/MacCatalyst/Entitlements.plist`:
-
+<key>com.apple.security.device.camera</key> <true/> <key>com.apple.security.personal-information.photos-library</key> <true/>
 ---
 
 ## Windows
 
 ### Capabilities
 Add to `Package.appxmanifest`:
-
+<Capabilities> <DeviceCapability Name="webcam"/> <uap:Capability Name="picturesLibrary"/> </Capabilities>
 ---
 
 ## Permission Flow in Code
 
 ### Camera Permission Check
-
+var status = await Permissions.CheckStatusAsync<Permissions.Camera>(); if (status != PermissionStatus.Granted) { status = await Permissions.RequestAsync<Permissions.Camera>(); if (status != PermissionStatus.Granted) { // Permission denied - show error return; } } // Permission granted - open camera
 ### Photo Library Permission
-
+var status = await Permissions.CheckStatusAsync<Permissions.Photos>(); if (status != PermissionStatus.Granted) { status = await Permissions.RequestAsync<Permissions.Photos>(); }
 ---
 
 ## Troubleshooting

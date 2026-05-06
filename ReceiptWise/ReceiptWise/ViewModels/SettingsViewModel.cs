@@ -5,16 +5,14 @@ using CommunityToolkit.Mvvm.Input;
 using ReceiptWise.Core.Interfaces.Repositories;
 using ReceiptWise.Data.Context;
 using ReceiptWise.Data.Seed;
+using ReceiptWise.Services.Configuration;
 
-/// <summary>
-/// ViewModel for Settings page
-/// Enhanced with database tools
-/// </summary>
 public partial class SettingsViewModel : BaseViewModel
 {
     private readonly ReceiptWiseDatabase _database;
     private readonly SampleDataSeeder _seeder;
     private readonly IReceiptRepository _receiptRepository;
+    private readonly AzureAIConfiguration _azureConfig;
 
     [ObservableProperty]
     private bool _aiEnabled = true;
@@ -31,17 +29,32 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty]
     private long _databaseSizeKB;
 
+    [ObservableProperty]
+    private string _azureEndpoint = string.Empty;
+
+    [ObservableProperty]
+    private bool _azureConfigured;
+
     public SettingsViewModel(
         ReceiptWiseDatabase database,
         SampleDataSeeder seeder,
-        IReceiptRepository receiptRepository)
+        IReceiptRepository receiptRepository,
+        AzureAIConfiguration azureConfig)
     {
         _database = database;
         _seeder = seeder;
         _receiptRepository = receiptRepository;
+        _azureConfig = azureConfig;
         Title = "Settings";
 
         DatabasePath = Path.Combine(FileSystem.AppDataDirectory, "receiptwise.db3");
+
+        // Check Azure configuration
+        AzureConfigured = !string.IsNullOrWhiteSpace(_azureConfig.DocumentIntelligence.Endpoint) &&
+                         !string.IsNullOrWhiteSpace(_azureConfig.DocumentIntelligence.ApiKey);
+
+        AzureEndpoint = AzureConfigured ? _azureConfig.DocumentIntelligence.Endpoint : "Not configured";
+
         _ = LoadDatabaseStatsAsync();
     }
 
@@ -62,6 +75,41 @@ public partial class SettingsViewModel : BaseViewModel
         {
             SetError($"Failed to load stats: {ex.Message}");
         }
+    }
+
+    [RelayCommand]
+    private async Task ConfigureAzureAsync()
+    {
+        var endpoint = await Shell.Current.DisplayPromptAsync(
+            "Azure Document Intelligence",
+            "Enter your Azure endpoint URL:",
+            initialValue: _azureConfig.DocumentIntelligence.Endpoint,
+            maxLength: 200,
+            keyboard: Keyboard.Url);
+
+        if (string.IsNullOrWhiteSpace(endpoint))
+            return;
+
+        var apiKey = await Shell.Current.DisplayPromptAsync(
+            "Azure API Key",
+            "Enter your API key:",
+            maxLength: 100,
+            keyboard: Keyboard.Text);
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+            return;
+
+        // Save to Preferences (in production, use SecureStorage)
+        Preferences.Set("AzureDocIntelligence_Endpoint", endpoint);
+        Preferences.Set("AzureDocIntelligence_ApiKey", apiKey);
+
+        AzureEndpoint = endpoint;
+        AzureConfigured = true;
+
+        await Shell.Current.DisplayAlert(
+            "Success",
+            "Azure configuration saved. Restart the app to apply changes.",
+            "OK");
     }
 
     [RelayCommand]
@@ -116,7 +164,6 @@ public partial class SettingsViewModel : BaseViewModel
     [RelayCommand]
     private async Task ExportDataAsync()
     {
-        // Placeholder for Milestone 8
         await Shell.Current.DisplayAlert("Coming Soon", "Export feature will be implemented in Milestone 8", "OK");
     }
 

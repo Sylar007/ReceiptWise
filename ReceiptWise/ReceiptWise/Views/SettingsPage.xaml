@@ -16,23 +16,40 @@
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
 
-            <!-- AI Settings -->
+            <!-- Azure AI Configuration -->
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="10">
                     <Label 
-                        Text="AI Features"
+                        Text="🤖 Azure AI Configuration"
                         FontSize="18"
                         FontAttributes="Bold" />
 
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label 
-                            Grid.Column="0"
-                            Text="Enable AI Extraction"
-                            VerticalOptions="Center" />
-                        <Switch 
-                            Grid.Column="1"
-                            IsToggled="{Binding AiEnabled}" />
+                    <Grid ColumnDefinitions="*,Auto" RowSpacing="10">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Status:" VerticalOptions="Center" />
+                        <Label Grid.Row="0" Grid.Column="1" 
+                               Text="{Binding AzureConfigured, Converter={StaticResource BoolToStatusConverter}}"
+                               TextColor="{Binding AzureConfigured, Converter={StaticResource BoolToColorConverter}}"
+                               FontAttributes="Bold" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="AI Enabled:" VerticalOptions="Center" />
+                        <Switch Grid.Row="1" Grid.Column="1" IsToggled="{Binding AiEnabled}" />
                     </Grid>
+
+                    <Label Text="{Binding AzureEndpoint, StringFormat='Endpoint: {0}'}" 
+                           FontSize="12" 
+                           TextColor="Gray" 
+                           LineBreakMode="TailTruncation" />
+
+                    <Button 
+                        Text="⚙️ Configure Azure Credentials"
+                        Command="{Binding ConfigureAzureCommand}"
+                        BackgroundColor="{StaticResource Primary}" />
+
+                    <Label 
+                        Text="⚠️ Required for AI extraction. Free tier available at portal.azure.com"
+                        FontSize="11"
+                        TextColor="Gray"
+                        LineBreakMode="WordWrap" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -40,25 +57,17 @@
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="10">
                     <Label 
-                        Text="Database Statistics"
+                        Text="📊 Database Statistics"
                         FontSize="18"
                         FontAttributes="Bold" />
 
-                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="5">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="5">
                         <Label Grid.Row="0" Grid.Column="0" Text="Total Receipts:" />
                         <Label Grid.Row="0" Grid.Column="1" Text="{Binding ReceiptCount}" FontAttributes="Bold" />
 
                         <Label Grid.Row="1" Grid.Column="0" Text="Database Size:" />
                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding DatabaseSizeKB, StringFormat='{0} KB'}" FontAttributes="Bold" />
-
-                        <Label Grid.Row="2" Grid.Column="0" Text="Path:" FontSize="10" TextColor="Gray" Grid.ColumnSpan="2" />
                     </Grid>
-
-                    <Label 
-                        Text="{Binding DatabasePath}"
-                        FontSize="9"
-                        TextColor="Gray"
-                        LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -80,12 +89,6 @@
                         Command="{Binding ClearAllDataCommand}"
                         BackgroundColor="#F44336"
                         TextColor="White" />
-
-                    <Label 
-                        Text="⚠️ Developer mode enabled in DEBUG build"
-                        FontSize="12"
-                        TextColor="#FF6F00"
-                        HorizontalOptions="Center" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -93,7 +96,7 @@
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="10">
                     <Label 
-                        Text="Data Management"
+                        Text="💾 Data Management"
                         FontSize="18"
                         FontAttributes="Bold" />
 
@@ -113,7 +116,7 @@
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="5">
                     <Label 
-                        Text="About"
+                        Text="ℹ️ About"
                         FontSize="18"
                         FontAttributes="Bold" />
                     <Label 
@@ -124,10 +127,13 @@
                         Text="Built with .NET MAUI 8"
                         FontSize="12"
                         TextColor="Gray" />
+                    <Label 
+                        Text="Powered by Azure AI"
+                        FontSize="12"
+                        TextColor="Gray" />
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Loading Indicator -->
             <ActivityIndicator 
                 IsRunning="{Binding IsBusy}"
                 IsVisible="{Binding IsBusy}"

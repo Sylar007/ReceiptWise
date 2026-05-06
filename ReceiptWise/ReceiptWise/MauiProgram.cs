@@ -9,6 +9,9 @@ using ReceiptWise.Data.Repositories;
 using ReceiptWise.Data.Seed;
 using ReceiptWise.Services.Infrastructure;
 using ReceiptWise.Services.Helpers;
+using ReceiptWise.Services.AI;
+using ReceiptWise.Services.Business;
+using ReceiptWise.Services.Configuration;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace ReceiptWise.App;
@@ -21,7 +24,7 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
-            .UseSkiaSharp() // For LiveCharts
+            .UseSkiaSharp()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -31,6 +34,10 @@ public static class MauiProgram
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
+
+        // Register Configuration
+        var azureConfig = LoadAzureConfiguration();
+        builder.Services.AddSingleton(azureConfig);
 
         // Register Database
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "receiptwise.db3");
@@ -47,11 +54,15 @@ public static class MauiProgram
 
         // Register Services
         builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
+        builder.Services.AddSingleton<IReceiptExtractionService, AzureDocumentIntelligenceService>();
+
+        // Register Business Services
+        builder.Services.AddSingleton<ReceiptProcessingService>();
 
         // Register Helpers
         builder.Services.AddSingleton<ImageHelper>();
 
-        // Register Seeder (for development/testing)
+        // Register Seeder
         builder.Services.AddSingleton<SampleDataSeeder>();
 
         // Register ViewModels
@@ -71,11 +82,39 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsPage>();
 
         var app = builder.Build();
-
-        // Initialize database on startup
         InitializeDatabaseAsync(app.Services).Wait();
 
         return app;
+    }
+
+    /// <summary>
+    /// Load Azure AI configuration from secure storage or environment
+    /// </summary>
+    private static AzureAIConfiguration LoadAzureConfiguration()
+    {
+        // In production, load from SecureStorage or backend API
+        // For development, use Preferences or environment variables
+
+        var config = new AzureAIConfiguration
+        {
+            DocumentIntelligence = new DocumentIntelligenceSettings
+            {
+                Endpoint = Preferences.Get("AzureDocIntelligence_Endpoint", string.Empty),
+                ApiKey = Preferences.Get("AzureDocIntelligence_ApiKey", string.Empty),
+                TimeoutSeconds = 30,
+                MaxRetries = 3
+            },
+            OpenAI = new OpenAISettings
+            {
+                Endpoint = Preferences.Get("AzureOpenAI_Endpoint", string.Empty),
+                ApiKey = Preferences.Get("AzureOpenAI_ApiKey", string.Empty),
+                DeploymentName = Preferences.Get("AzureOpenAI_Deployment", "gpt-4"),
+                MaxTokens = 150,
+                Temperature = 0.1f
+            }
+        };
+
+        return config;
     }
 
     private static async Task InitializeDatabaseAsync(IServiceProvider services)
@@ -88,7 +127,6 @@ public static class MauiProgram
             var categoryRepo = services.GetRequiredService<ICategoryRepository>();
             await categoryRepo.InitializeDefaultCategoriesAsync();
 
-            // Seed sample data in DEBUG mode only
 #if DEBUG
             var seeder = services.GetRequiredService<SampleDataSeeder>();
             var receiptRepo = services.GetRequiredService<IReceiptRepository>();
