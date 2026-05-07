@@ -90,12 +90,12 @@ public class ReceiptRepository : IReceiptRepository
 
         if (minAmount.HasValue)
         {
-            query = query.Where(r => r.Total >= minAmount.Value);
+            query = query.Where(r => r.Total >= (double)minAmount.Value);
         }
 
         if (maxAmount.HasValue)
         {
-            query = query.Where(r => r.Total <= maxAmount.Value);
+            query = query.Where(r => r.Total <= (double)maxAmount.Value);
         }
 
         if (startDate.HasValue)
@@ -154,8 +154,8 @@ public class ReceiptRepository : IReceiptRepository
                 ReceiptId = entity.Id,
                 Description = item.Description,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice
+                UnitPrice = (double)item.UnitPrice,
+                TotalPrice = (double)item.TotalPrice
             };
             await conn.InsertAsync(itemEntity);
         }
@@ -197,8 +197,8 @@ public class ReceiptRepository : IReceiptRepository
                 ReceiptId = receipt.Id,
                 Description = item.Description,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice,
-                TotalPrice = item.TotalPrice
+                UnitPrice = (double)item.UnitPrice,
+                TotalPrice = (double)item.TotalPrice
             };
             await conn.InsertAsync(itemEntity);
         }
@@ -230,65 +230,63 @@ public class ReceiptRepository : IReceiptRepository
             Id = entity.Id,
             MerchantName = entity.MerchantName,
             TransactionDate = entity.TransactionDate,
-            Total = entity.Total,
-            Tax = entity.Tax,
-            Subtotal = entity.Subtotal,
+            Total = (decimal)entity.Total,  // Convert double to decimal
+            Tax = (decimal)entity.Tax,
+            Subtotal = (decimal)entity.Subtotal,
             Currency = (CurrencyCode)entity.Currency,
             Category = (ReceiptCategory)entity.Category,
             ExtractionStatus = (ExtractionStatus)entity.ExtractionStatus,
             Notes = entity.Notes,
             CreatedAt = entity.CreatedAt,
             ModifiedAt = entity.ModifiedAt,
-            Items = entity.Items.Select(i => new ReceiptItem
-            {
-                Id = i.Id,
-                ReceiptId = i.ReceiptId,
-                Description = i.Description,
-                Quantity = i.Quantity,
-                UnitPrice = i.UnitPrice,
-                TotalPrice = i.TotalPrice
-            }).ToList(),
-            Attachment = entity.Attachment != null ? new Attachment
-            {
-                Id = entity.Attachment.Id,
-                ReceiptId = entity.Attachment.ReceiptId,
-                FileName = entity.Attachment.FileName,
-                FilePath = entity.Attachment.FilePath,
-                ThumbnailPath = entity.Attachment.ThumbnailPath,
-                FileType = entity.Attachment.FileType,
-                FileSizeBytes = entity.Attachment.FileSizeBytes,
-                CreatedAt = entity.Attachment.CreatedAt
-            } : null,
-            Warranty = entity.Warranty != null ? new WarrantyInfo
-            {
-                Id = entity.Warranty.Id,
-                ReceiptId = entity.Warranty.ReceiptId,
-                PurchaseDate = entity.Warranty.PurchaseDate,
-                WarrantyEndDate = entity.Warranty.WarrantyEndDate,
-                WarrantyMonths = entity.Warranty.WarrantyMonths,
-                ProductName = entity.Warranty.ProductName,
-                WarrantyTerms = entity.Warranty.WarrantyTerms,
-                NotificationEnabled = entity.Warranty.NotificationEnabled
-            } : null
+            Items = entity.Items.Select(MapItemToDomain).ToList()
         };
     }
 
-    private ReceiptEntity MapToEntity(Receipt domain)
+    private ReceiptEntity MapToEntity(Receipt receipt)
     {
-        return new ReceiptEntity
+        var entity = new ReceiptEntity
         {
-            Id = domain.Id,
-            MerchantName = domain.MerchantName,
-            TransactionDate = domain.TransactionDate,
-            Total = domain.Total,
-            Tax = domain.Tax,
-            Subtotal = domain.Subtotal,
-            Currency = (int)domain.Currency,
-            Category = (int)domain.Category,
-            ExtractionStatus = (int)domain.ExtractionStatus,
-            Notes = domain.Notes,
-            CreatedAt = domain.CreatedAt,
-            ModifiedAt = domain.ModifiedAt
+            Id = receipt.Id,
+            MerchantName = receipt.MerchantName,
+            TransactionDate = receipt.TransactionDate,
+            Total = (double)receipt.Total,  // Convert decimal to double
+            Tax = (double)receipt.Tax,
+            Subtotal = (double)receipt.Subtotal,
+            Currency = (int)receipt.Currency,
+            Category = (int)receipt.Category,
+            ExtractionStatus = (int)receipt.ExtractionStatus,
+            Notes = receipt.Notes,
+            CreatedAt = receipt.CreatedAt,
+            ModifiedAt = receipt.ModifiedAt
+        };
+
+        return entity;
+    }
+
+    private ReceiptItem MapItemToDomain(ReceiptItemEntity entity)
+    {
+        return new ReceiptItem
+        {
+            Id = entity.Id,
+            ReceiptId = entity.ReceiptId,
+            Description = entity.Description,
+            Quantity = entity.Quantity,
+            UnitPrice = (decimal)entity.UnitPrice,  // Convert double to decimal
+            TotalPrice = (decimal)entity.TotalPrice
+        };
+    }
+
+    private ReceiptItemEntity MapItemToEntity(ReceiptItem item)
+    {
+        return new ReceiptItemEntity
+        {
+            Id = item.Id,
+            ReceiptId = item.ReceiptId,
+            Description = item.Description,
+            Quantity = item.Quantity,
+            UnitPrice = (double)item.UnitPrice,  // Convert decimal to double
+            TotalPrice = (double)item.TotalPrice
         };
     }
 }

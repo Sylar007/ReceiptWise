@@ -12,11 +12,16 @@
 		<PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
 		<PackageReference Include="Polly" Version="8.2.1" />
 		<PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
+		<PackageReference Include="CsvHelper" Version="30.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+		<!-- Add SkiaSharp for image optimization -->
+		<PackageReference Include="SkiaSharp" Version="2.88.7" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.90" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\ReceiptWise.Core\ReceiptWise.Core.csproj" />
+		<ProjectReference Include="..\ReceiptWise.Data\ReceiptWise.Data.csproj" />
 	</ItemGroup>
 
 </Project>

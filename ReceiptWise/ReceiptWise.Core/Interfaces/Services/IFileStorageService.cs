@@ -14,4 +14,9 @@ public interface IFileStorageService
     Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default);
 
     Task<bool> FileExistsAsync(string filePath);
+
+    // Add these new methods
+    long GetTotalStorageSize();
+
+    Task ClearAllFilesAsync();
 }

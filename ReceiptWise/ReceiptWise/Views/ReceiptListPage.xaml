@@ -14,7 +14,21 @@
             Command="{Binding LoadReceiptsCommand}" />
     </ContentPage.Behaviors>
 
-    <Grid RowDefinitions="Auto,*">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem 
+            Text="Filter"
+            IconImageSource="filter.png"
+            Command="{Binding NavigateToFilterPageCommand}" />
+        <ToolbarItem 
+            Text="Sort"
+            IconImageSource="sort.png"
+            Command="{Binding ChangeSortCommand}" />
+        <ToolbarItem 
+            Text="{Binding IsSelectionMode, Converter={StaticResource SelectionModeTextConverter}}"
+            Command="{Binding ToggleSelectionModeCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
 
         <!-- Search Bar -->
         <SearchBar 
@@ -22,64 +36,190 @@
             Placeholder="Search receipts..."
             Text="{Binding SearchText}"
             SearchCommand="{Binding SearchCommand}"
-            Margin="10" />
+            Margin="10,10,10,0" />
+
+        <!-- Filter Status -->
+        <Label 
+            Grid.Row="1"
+            Text="{Binding FilterStatus}"
+            FontSize="12"
+            TextColor="Gray"
+            Margin="15,5"
+            HorizontalOptions="Start" />
+
+        <!-- Quick Filters -->
+        <ScrollView 
+            Grid.Row="2"
+            Orientation="Horizontal"
+            Margin="10,5,10,10">
+            <HorizontalStackLayout Spacing="8">
+
+                <Button 
+                    Text="All"
+                    Command="{Binding ClearFiltersCommand}"
+                    BackgroundColor="{StaticResource Gray200}"
+                    TextColor="{StaticResource Gray900}"
+                    FontSize="12"
+                    Padding="15,8"
+                    CornerRadius="15" />
+
+                <Button 
+                    Text="This Week"
+                    Command="{Binding FilterByDateRangeCommand}"
+                    CommandParameter="This Week"
+                    BackgroundColor="{StaticResource Secondary}"
+                    FontSize="12"
+                    Padding="15,8"
+                    CornerRadius="15" />
+
+                <Button 
+                    Text="This Month"
+                    Command="{Binding FilterByDateRangeCommand}"
+                    CommandParameter="This Month"
+                    BackgroundColor="{StaticResource Secondary}"
+                    FontSize="12"
+                    Padding="15,8"
+                    CornerRadius="15" />
+
+                <Button 
+                    Text="Last 30 Days"
+                    Command="{Binding FilterByDateRangeCommand}"
+                    CommandParameter="Last 30 Days"
+                    BackgroundColor="{StaticResource Secondary}"
+                    FontSize="12"
+                    Padding="15,8"
+                    CornerRadius="15" />
+
+            </HorizontalStackLayout>
+        </ScrollView>
 
         <!-- Receipt List -->
         <RefreshView 
-            Grid.Row="1"
+            Grid.Row="3"
             IsRefreshing="{Binding IsBusy}"
             Command="{Binding LoadReceiptsCommand}">
+            <CollectionView>
+            <CollectionView.EmptyView>
+                <controls:EmptyStateView
+        xmlns:controls="clr-namespace:ReceiptWise.App.Controls"
+        Icon="📭"
+        Title="No Receipts Found"
+        Message="Start by capturing your first receipt using the camera or import an existing one."
+        ActionText="Capture Receipt"
+        ActionCommand="{Binding NavigateToCaptureCommand}" />
+            </CollectionView.EmptyView>
 
-            <CollectionView 
-                ItemsSource="{Binding Receipts}"
-                SelectionMode="None"
-                EmptyView="No receipts found">
-
-                <CollectionView.ItemTemplate>
+            <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Receipt">
                         <Frame 
                             Margin="10,5"
-                            Padding="15"
+                            Padding="0"
                             CornerRadius="10"
-                            HasShadow="True">
-                            <Frame.GestureRecognizers>
-                                <TapGestureRecognizer 
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ReceiptListViewModel}}, Path=ViewDetailCommand}"
-                                    CommandParameter="{Binding .}" />
-                            </Frame.GestureRecognizers>
+                            HasShadow="True"
+                            BackgroundColor="{Binding IsSelected, Converter={StaticResource SelectionBackgroundConverter}}">
 
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <Grid Padding="15" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
 
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ReceiptListViewModel}}, Path=ViewDetailCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Grid.GestureRecognizers>
+
+                                <!-- Merchant Name -->
                                 <Label 
                                     Grid.Row="0" Grid.Column="0"
                                     Text="{Binding MerchantName}"
                                     FontSize="18"
                                     FontAttributes="Bold" />
 
+                                <!-- Total Amount -->
                                 <Label 
                                     Grid.Row="0" Grid.Column="1"
                                     Text="{Binding Total, StringFormat='${0:F2}'}"
-                                    FontSize="18"
+                                    FontSize="20"
                                     FontAttributes="Bold"
                                     TextColor="{StaticResource Primary}"
                                     HorizontalOptions="End" />
 
+                                <!-- Date -->
                                 <Label 
                                     Grid.Row="1" Grid.Column="0"
                                     Text="{Binding TransactionDate, StringFormat='{0:MMM dd, yyyy}'}"
                                     FontSize="14"
-                                    TextColor="Gray" />
+                                    TextColor="Gray"
+                                    Margin="0,2,0,0" />
 
-                                <Label 
+                                <!-- Category Badge -->
+                                <Frame 
                                     Grid.Row="2" Grid.Column="0"
-                                    Text="{Binding Category}"
+                                    Padding="8,4"
+                                    CornerRadius="12"
+                                    BackgroundColor="{StaticResource Secondary}"
+                                    HasShadow="False"
+                                    HorizontalOptions="Start"
+                                    Margin="0,5,0,0">
+                                    <Label 
+                                        Text="{Binding Category}"
+                                        FontSize="12"
+                                        TextColor="{StaticResource Primary}"
+                                        FontAttributes="Bold" />
+                                </Frame>
+
+                                <!-- Item Count -->
+                                <Label 
+                                    Grid.Row="2" Grid.Column="1"
+                                    Text="{Binding Items.Count, StringFormat='{0} items'}"
                                     FontSize="12"
-                                    TextColor="{StaticResource Secondary}" />
+                                    TextColor="Gray"
+                                    VerticalOptions="Center" />
+
+                                <!-- Notes Preview (if exists) -->
+                                <Label 
+                                    Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                    Text="{Binding Notes}"
+                                    FontSize="12"
+                                    TextColor="Gray"
+                                    LineBreakMode="TailTruncation"
+                                    MaxLines="1"
+                                    IsVisible="{Binding Notes, Converter={StaticResource IsNotNullConverter}}"
+                                    Margin="0,5,0,0" />
+
                             </Grid>
                         </Frame>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </RefreshView>
+
+        <!-- Selection Mode Actions -->
+        <Frame 
+            Grid.Row="4"
+            IsVisible="{Binding IsSelectionMode}"
+            BackgroundColor="{StaticResource Primary}"
+            Padding="15"
+            CornerRadius="0"
+            HasShadow="True">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label 
+                    Grid.Column="0"
+                    Text="{Binding SelectedReceipts.Count, StringFormat='{0} selected'}"
+                    TextColor="White"
+                    FontSize="16"
+                    FontAttributes="Bold"
+                    VerticalOptions="Center" />
+
+                <Button 
+                    Grid.Column="1"
+                    Text="🗑️ Delete"
+                    Command="{Binding DeleteSelectedCommand}"
+                    BackgroundColor="Red"
+                    TextColor="White"
+                    FontSize="14"
+                    Padding="20,10"
+                    CornerRadius="8" />
+            </Grid>
+        </Frame>
+
     </Grid>
 </ContentPage>

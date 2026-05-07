@@ -16,6 +16,15 @@
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
 
+            <!-- Status Message -->
+            <Frame 
+                IsVisible="{Binding StatusMessage, Converter={StaticResource IsNotNullConverter}}"
+                Padding="15"
+                CornerRadius="8"
+                BackgroundColor="{StaticResource Secondary}">
+                <Label Text="{Binding StatusMessage}" FontSize="14" TextColor="{StaticResource Primary}" />
+            </Frame>
+
             <!-- Azure AI Configuration -->
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="10">
@@ -28,7 +37,6 @@
                         <Label Grid.Row="0" Grid.Column="0" Text="Status:" VerticalOptions="Center" />
                         <Label Grid.Row="0" Grid.Column="1" 
                                Text="{Binding AzureConfigured, Converter={StaticResource BoolToStatusConverter}}"
-                               TextColor="{Binding AzureConfigured, Converter={StaticResource BoolToColorConverter}}"
                                FontAttributes="Bold" />
 
                         <Label Grid.Row="1" Grid.Column="0" Text="AI Enabled:" VerticalOptions="Center" />
@@ -44,30 +52,101 @@
                         Text="⚙️ Configure Azure Credentials"
                         Command="{Binding ConfigureAzureCommand}"
                         BackgroundColor="{StaticResource Primary}" />
-
-                    <Label 
-                        Text="⚠️ Required for AI extraction. Free tier available at portal.azure.com"
-                        FontSize="11"
-                        TextColor="Gray"
-                        LineBreakMode="WordWrap" />
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Database Stats -->
+            <!-- Export & Backup -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True" BackgroundColor="#E8F5E9">
+                <VerticalStackLayout Spacing="10">
+                    <Label 
+                        Text="📦 Export and Backup"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        TextColor="#2E7D32" />
+
+                    <Button 
+                        Text="📄 Export All Receipts"
+                        Command="{Binding ExportAllReceiptsCommand}"
+                        BackgroundColor="#4CAF50"
+                        TextColor="White" />
+
+                    <Button 
+                        Text="💾 Create Full Backup"
+                        Command="{Binding CreateBackupCommand}"
+                        BackgroundColor="#2196F3"
+                        TextColor="White" />
+
+                    <Button 
+                        Text="📥 Restore from Backup"
+                        Command="{Binding RestoreBackupCommand}"
+                        BackgroundColor="#FF9800"
+                        TextColor="White" />
+
+                    <Label 
+                        Text="💡 Backups include database + attachments"
+                        FontSize="11"
+                        TextColor="Gray"
+                        Margin="0,5,0,0" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Preferences -->
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="10">
                     <Label 
-                        Text="📊 Database Statistics"
+                        Text="⚙️ Preferences"
                         FontSize="18"
                         FontAttributes="Bold" />
 
-                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="5">
+                    <Grid ColumnDefinitions="*,Auto" RowSpacing="15">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Currency:" VerticalOptions="Center" />
+                        <Button Grid.Row="0" Grid.Column="1" 
+                                Text="{Binding SelectedCurrency}"
+                                Command="{Binding ChangeCurrencyCommand}"
+                                BackgroundColor="{StaticResource Secondary}"
+                                TextColor="{StaticResource Primary}"
+                                FontSize="14"
+                                Padding="15,8"
+                                CornerRadius="8" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Language:" VerticalOptions="Center" />
+                        <Button Grid.Row="1" Grid.Column="1" 
+                                Text="{Binding SelectedLanguage}"
+                                Command="{Binding ChangeLanguageCommand}"
+                                BackgroundColor="{StaticResource Secondary}"
+                                TextColor="{StaticResource Primary}"
+                                FontSize="14"
+                                Padding="15,8"
+                                CornerRadius="8" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Database Statistics -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label 
+                        Text="📊 Storage Statistics"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
                         <Label Grid.Row="0" Grid.Column="0" Text="Total Receipts:" />
                         <Label Grid.Row="0" Grid.Column="1" Text="{Binding ReceiptCount}" FontAttributes="Bold" />
 
                         <Label Grid.Row="1" Grid.Column="0" Text="Database Size:" />
                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding DatabaseSizeKB, StringFormat='{0} KB'}" FontAttributes="Bold" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Attachments Size:" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding AttachmentsSizeKB, StringFormat='{0} KB'}" FontAttributes="Bold" />
                     </Grid>
+
+                    <BoxView HeightRequest="1" Color="LightGray" Margin="0,10" />
+
+                    <Label Text="{Binding DatabasePath, StringFormat='Path: {0}'}" 
+                           FontSize="10" 
+                           TextColor="Gray" 
+                           LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -77,38 +156,43 @@
                     <Label 
                         Text="🛠️ Developer Tools"
                         FontSize="18"
-                        FontAttributes="Bold" />
+                        FontAttributes="Bold"
+                        TextColor="#E65100" />
 
                     <Button 
                         Text="Seed Sample Data (20 receipts)"
                         Command="{Binding SeedSampleDataCommand}"
-                        BackgroundColor="#4CAF50" />
+                        BackgroundColor="#FF9800"
+                        TextColor="White" />
 
                     <Button 
-                        Text="Clear All Data"
+                        Text="View Diagnostics"
+                        Command="{Binding ViewDiagnosticsCommand}"
+                        BackgroundColor="#2196F3"
+                        TextColor="White" />
+
+                    <Button 
+                        Text="⚠️ Clear All Data"
                         Command="{Binding ClearAllDataCommand}"
                         BackgroundColor="#F44336"
                         TextColor="White" />
-                </VerticalStackLayout>
-            </Frame>
 
-            <!-- Data Management -->
-            <Frame Padding="15" CornerRadius="10" HasShadow="True">
-                <VerticalStackLayout Spacing="10">
+                    <!-- Add this button in the Azure AI Configuration section -->
+
+                    <Button 
+    Text="🗑️ Clear Azure Credentials"
+    Command="{Binding ClearAzureCredentialsCommand}"
+    BackgroundColor="#F44336"
+    TextColor="White"
+    IsVisible="{Binding AzureConfigured}"
+    Margin="0,5,0,0" />
+
                     <Label 
-                        Text="💾 Data Management"
-                        FontSize="18"
-                        FontAttributes="Bold" />
-
-                    <Button 
-                        Text="Export Data (CSV)"
-                        Command="{Binding ExportDataCommand}"
-                        BackgroundColor="{StaticResource Primary}" />
-
-                    <Button 
-                        Text="Clear Cache"
-                        Command="{Binding ClearCacheCommand}"
-                        BackgroundColor="Gray" />
+                        Text="⚠️ Developer mode enabled in DEBUG build"
+                        FontSize="11"
+                        TextColor="#E65100"
+                        HorizontalOptions="Center"
+                        Margin="0,5,0,0" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -116,7 +200,7 @@
             <Frame Padding="15" CornerRadius="10" HasShadow="True">
                 <VerticalStackLayout Spacing="5">
                     <Label 
-                        Text="ℹ️ About"
+                        Text="ℹ️ About ReceiptWise"
                         FontSize="18"
                         FontAttributes="Bold" />
                     <Label 
@@ -131,13 +215,30 @@
                         Text="Powered by Azure AI"
                         FontSize="12"
                         TextColor="Gray" />
+                    <Label 
+                        Text="© 2026 ReceiptWise"
+                        FontSize="10"
+                        TextColor="Gray"
+                        Margin="0,10,0,0" />
                 </VerticalStackLayout>
             </Frame>
 
+            <!-- Loading Indicator -->
             <ActivityIndicator 
                 IsRunning="{Binding IsBusy}"
                 IsVisible="{Binding IsBusy}"
-                Color="{StaticResource Primary}" />
+                Color="{StaticResource Primary}"
+                HeightRequest="50" />
+
+            <!-- Error Message -->
+            <Frame 
+                IsVisible="{Binding HasError}"
+                BackgroundColor="#FFEBEE"
+                BorderColor="#F44336"
+                Padding="10"
+                CornerRadius="5">
+                <Label Text="{Binding ErrorMessage}" TextColor="#D32F2F" />
+            </Frame>
 
         </VerticalStackLayout>
     </ScrollView>

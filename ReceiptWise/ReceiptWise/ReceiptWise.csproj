@@ -1,0 +1,20 @@
+<!-- Find the <PropertyGroup> section and add these properties -->
+<PropertyGroup>
+    <!-- Existing properties... -->
+
+    <!-- Android Linker Settings -->
+    <AndroidLinkMode>SdkOnly</AndroidLinkMode>
+    <AndroidLinkTool>r8</AndroidLinkTool>
+
+    <!-- For Debug builds, you can disable linking completely to test -->
+    <AndroidLinkMode Condition="'$(Configuration)' == 'Debug'">None</AndroidLinkMode>
+</PropertyGroup>
+
+<!-- Add this ItemGroup for the linker file -->
+<ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
+    <AndroidLinkDescription Include="Platforms\Android\LinkerConfig.xml" />
+</ItemGroup>
+
+<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <AndroidLinkMode>None</AndroidLinkMode>
+</PropertyGroup>

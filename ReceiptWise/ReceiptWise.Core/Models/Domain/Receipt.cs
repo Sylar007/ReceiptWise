@@ -28,6 +28,8 @@ public class Receipt
 
     public string? Notes { get; set; }
 
+    public bool IsSelected { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? ModifiedAt { get; set; }

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReceiptWise.App.ViewModels"
+             x:Class="ReceiptWise.App.Views.WarrantyPage"
+             Title="{Binding Title}"
+             x:DataType="vm:WarrantyViewModel">
+
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+            EventName="Appearing"
+            Command="{Binding LoadWarrantyCommand}" />
+    </ContentPage.Behaviors>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Status Card -->
+            <Frame Padding="20" CornerRadius="10" HasShadow="True"
+                   BackgroundColor="{Binding IsExpired, Converter={StaticResource WarrantyStatusColorConverter}}"
+                   IsVisible="{Binding HasWarranty}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{Binding IsExpired, Converter={StaticResource WarrantyStatusTextConverter}}"
+                           FontSize="20" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" />
+
+                    <Label Text="{Binding DaysRemaining, StringFormat='{0} days remaining'}"
+                           FontSize="16" TextColor="White"
+                           HorizontalOptions="Center"
+                           IsVisible="{Binding IsExpired, Converter={StaticResource InvertedBoolConverter}}" />
+
+                    <Label Text="Warranty has expired"
+                           FontSize="16" TextColor="White"
+                           HorizontalOptions="Center"
+                           IsVisible="{Binding IsExpired}" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Warranty Form -->
+            <Frame Padding="20" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="15">
+
+                    <Label Text="Warranty Details" FontSize="18" FontAttributes="Bold" />
+
+                    <!-- Product Name -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Product Name *" FontSize="12" TextColor="Gray" />
+                        <Entry Text="{Binding ProductName}"
+                               Placeholder="e.g., Samsung TV 55-inch"
+                               FontSize="16" />
+                    </VerticalStackLayout>
+
+                    <!-- Purchase Date -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Purchase Date" FontSize="12" TextColor="Gray" />
+                        <DatePicker Date="{Binding PurchaseDate}"
+                                    FontSize="16" />
+                    </VerticalStackLayout>
+
+                    <!-- Warranty Period -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Warranty Period (Months)" FontSize="12" TextColor="Gray" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Stepper Grid.Column="0"
+                                     Minimum="1" Maximum="60" Increment="1"
+                                     Value="{Binding WarrantyMonths}"
+                                     HorizontalOptions="Start" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding WarrantyMonths, StringFormat='{0} months'}"
+                                   FontSize="16" FontAttributes="Bold"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <!-- Warranty End Date (Calculated) -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Warranty Expires On" FontSize="12" TextColor="Gray" />
+                        <Frame Padding="12" CornerRadius="8"
+                               BackgroundColor="{StaticResource Secondary}"
+                               HasShadow="False">
+                            <Label Text="{Binding WarrantyEndDate, StringFormat='{0:MMMM dd, yyyy}'}"
+                                   FontSize="16" FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}" />
+                        </Frame>
+                    </VerticalStackLayout>
+
+                    <!-- Warranty Terms -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Warranty Terms (Optional)" FontSize="12" TextColor="Gray" />
+                        <Editor Text="{Binding WarrantyTerms}"
+                                Placeholder="Enter warranty terms and conditions..."
+                                HeightRequest="80"
+                                FontSize="14" />
+                    </VerticalStackLayout>
+
+                    <!-- Notification Toggle -->
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="Enable Reminder" FontSize="14" FontAttributes="Bold" />
+                            <Label Text="Get notified 7 days before expiry"
+                                   FontSize="12" TextColor="Gray" />
+                        </VerticalStackLayout>
+                        <Switch Grid.Column="1"
+                                IsToggled="{Binding NotificationEnabled}"
+                                VerticalOptions="Center" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Action Buttons -->
+            <Button Text="💾 Save Warranty Information"
+                    Command="{Binding SaveWarrantyCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    FontSize="16"
+                    CornerRadius="10"
+                    HeightRequest="50" />
+
+            <Button Text="🔔 Test Notification"
+                    Command="{Binding TestNotificationCommand}"
+                    BackgroundColor="#FF9800"
+                    TextColor="White"
+                    FontSize="14"
+                    CornerRadius="10"
+                    HeightRequest="45" />
+
+            <Button Text="🗑️ Remove Warranty"
+                    Command="{Binding DeleteWarrantyCommand}"
+                    IsVisible="{Binding HasWarranty}"
+                    BackgroundColor="Red"
+                    TextColor="White"
+                    FontSize="14"
+                    CornerRadius="10"
+                    HeightRequest="45" />
+
+            <!-- Info Card -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True"
+                   BackgroundColor="#E3F2FD">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="ℹ️ How it works" FontSize="14" FontAttributes="Bold"
+                           TextColor="#1976D2" />
+                    <Label Text="• Notification sent 7 days before warranty expires"
+                           FontSize="12" TextColor="#1976D2" />
+                    <Label Text="• Make sure notifications are enabled in system settings"
+                           FontSize="12" TextColor="#1976D2" />
+                    <Label Text="• You can test the notification feature using the button above"
+                           FontSize="12" TextColor="#1976D2" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Loading & Error -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                              Color="{StaticResource Primary}" HeightRequest="50" />
+
+            <Frame IsVisible="{Binding HasError}"
+                   BackgroundColor="#FFEBEE" BorderColor="#F44336"
+                   Padding="10" CornerRadius="5">
+                <Label Text="{Binding ErrorMessage}" TextColor="#D32F2F" />
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

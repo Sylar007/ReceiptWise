@@ -30,13 +30,74 @@ public class ReceiptWiseDatabase
         {
             _logger?.LogInformation("Creating database tables...");
 
-            await _database.CreateTableAsync<ReceiptEntity>();
-            await _database.CreateTableAsync<ReceiptItemEntity>();
-            await _database.CreateTableAsync<AttachmentEntity>();
-            await _database.CreateTableAsync<CategoryEntity>();
-            await _database.CreateTableAsync<WarrantyInfoEntity>();
+            // Create tables one by one with individual error handling
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("→ Creating ReceiptEntity table...");
+                await _database.CreateTableAsync<ReceiptEntity>();
+                System.Diagnostics.Debug.WriteLine("✓ ReceiptEntity table created");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ FAILED: ReceiptEntity - {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                throw new Exception($"Failed to create ReceiptEntity table: {ex.Message}", ex);
+            }
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("→ Creating ReceiptItemEntity table...");
+                await _database.CreateTableAsync<ReceiptItemEntity>();
+                System.Diagnostics.Debug.WriteLine("✓ ReceiptItemEntity table created");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ FAILED: ReceiptItemEntity - {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                throw new Exception($"Failed to create ReceiptItemEntity table: {ex.Message}", ex);
+            }
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("→ Creating AttachmentEntity table...");
+                await _database.CreateTableAsync<AttachmentEntity>();
+                System.Diagnostics.Debug.WriteLine("✓ AttachmentEntity table created");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ FAILED: AttachmentEntity - {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                throw new Exception($"Failed to create AttachmentEntity table: {ex.Message}", ex);
+            }
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("→ Creating CategoryEntity table...");
+                await _database.CreateTableAsync<CategoryEntity>();
+                System.Diagnostics.Debug.WriteLine("✓ CategoryEntity table created");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ FAILED: CategoryEntity - {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                throw new Exception($"Failed to create CategoryEntity table: {ex.Message}", ex);
+            }
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("→ Creating WarrantyInfoEntity table...");
+                await _database.CreateTableAsync<WarrantyInfoEntity>();
+                System.Diagnostics.Debug.WriteLine("✓ WarrantyInfoEntity table created");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ FAILED: WarrantyInfoEntity - {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                throw new Exception($"Failed to create WarrantyInfoEntity table: {ex.Message}", ex);
+            }
 
             // Create indexes for better query performance
+            System.Diagnostics.Debug.WriteLine("→ Creating indexes...");
             await _database.ExecuteAsync(
                 "CREATE INDEX IF NOT EXISTS idx_receipts_date ON Receipts(TransactionDate DESC)");
             await _database.ExecuteAsync(
@@ -47,13 +108,26 @@ public class ReceiptWiseDatabase
                 "CREATE INDEX IF NOT EXISTS idx_items_receipt ON ReceiptItems(ReceiptId)");
             await _database.ExecuteAsync(
                 "CREATE INDEX IF NOT EXISTS idx_attachments_receipt ON Attachments(ReceiptId)");
+            System.Diagnostics.Debug.WriteLine("✓ Indexes created");
 
             _isInitialized = true;
             _logger?.LogInformation("Database tables created successfully");
+            System.Diagnostics.Debug.WriteLine("✓✓✓ ALL TABLES CREATED SUCCESSFULLY ✓✓✓");
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to initialize database");
+            System.Diagnostics.Debug.WriteLine($"════════ DATABASE INITIALIZATION FAILED ════════");
+            System.Diagnostics.Debug.WriteLine($"Exception Type: {ex.GetType().FullName}");
+            System.Diagnostics.Debug.WriteLine($"Message: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack Trace:\n{ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException.GetType().FullName}");
+                System.Diagnostics.Debug.WriteLine($"Inner Message: {ex.InnerException.Message}");
+                System.Diagnostics.Debug.WriteLine($"Inner Stack:\n{ex.InnerException.StackTrace}");
+            }
+            System.Diagnostics.Debug.WriteLine($"═══════════════════════════════════════════════");
             throw;
         }
     }

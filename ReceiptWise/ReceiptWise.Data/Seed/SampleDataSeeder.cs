@@ -55,7 +55,7 @@ public class SampleDataSeeder
             var (merchantName, category) = merchants[random.Next(merchants.Length)];
             var transactionDate = DateTime.Now.AddDays(-random.Next(90));
             var itemCount = random.Next(1, 6);
-            var subtotal = 0m;
+            var subtotal = 0.0; // Changed to double
 
             // Create receipt
             var receipt = new ReceiptEntity
@@ -75,8 +75,8 @@ public class SampleDataSeeder
             for (int j = 0; j < itemCount; j++)
             {
                 var quantity = random.Next(1, 4);
-                var unitPrice = (decimal)(random.NextDouble() * 50 + 1);
-                var totalPrice = quantity * unitPrice;
+                var unitPrice = random.NextDouble() * 50 + 1; // Already double
+                var totalPrice = quantity * unitPrice; // Already double
                 subtotal += totalPrice;
 
                 receiptItems.Add(new ReceiptItemEntity
@@ -89,7 +89,7 @@ public class SampleDataSeeder
             }
 
             receipt.Subtotal = Math.Round(subtotal, 2);
-            receipt.Tax = Math.Round(subtotal * 0.0875m, 2); // 8.75% tax
+            receipt.Tax = Math.Round(subtotal * 0.0875, 2);
             receipt.Total = Math.Round(receipt.Subtotal + receipt.Tax, 2);
 
             // Insert receipt
@@ -157,6 +157,6 @@ public class SampleDataSeeder
     {
         var conn = _database.GetConnection();
         var receipts = await conn.Table<ReceiptEntity>().ToListAsync();
-        return receipts.Sum(r => r.Total);
+        return (decimal)receipts.Sum(r => r.Total); // Convert double to decimal
     }
 }

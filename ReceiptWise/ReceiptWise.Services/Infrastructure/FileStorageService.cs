@@ -4,11 +4,7 @@ using ReceiptWise.Core.Interfaces.Services;
 using ReceiptWise.Core.Exceptions;
 using ReceiptWise.Core.Constants;
 using Microsoft.Extensions.Logging;
-using System.IO; // Add this at the top of the file
-#if ANDROID || IOS || MACCATALYST
 using Microsoft.Maui.Storage;
-#endif
-
 /// <summary>
 /// Service for managing local file storage (images and PDFs)
 /// Stores files in app's private storage with optional compression
@@ -24,11 +20,7 @@ public class FileStorageService : IFileStorageService
         _logger = logger;
 
         // Create directories in app data folder
-        #if ANDROID || IOS || MACCATALYST
         var appDataPath = FileSystem.AppDataDirectory;
-        #else
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        #endif
         _attachmentsPath = Path.Combine(appDataPath, AppConstants.Storage.AttachmentsFolder);
         _thumbnailsPath = Path.Combine(appDataPath, AppConstants.Storage.ThumbnailsFolder);
 
@@ -166,16 +158,23 @@ public class FileStorageService : IFileStorageService
     {
         long totalSize = 0;
 
-        if (Directory.Exists(_attachmentsPath))
+        try
         {
-            var attachmentFiles = Directory.GetFiles(_attachmentsPath);
-            totalSize += attachmentFiles.Sum(f => new FileInfo(f).Length);
-        }
+            if (Directory.Exists(_attachmentsPath))
+            {
+                var attachmentFiles = Directory.GetFiles(_attachmentsPath);
+                totalSize += attachmentFiles.Sum(f => new FileInfo(f).Length);
+            }
 
-        if (Directory.Exists(_thumbnailsPath))
+            if (Directory.Exists(_thumbnailsPath))
+            {
+                var thumbnailFiles = Directory.GetFiles(_thumbnailsPath);
+                totalSize += thumbnailFiles.Sum(f => new FileInfo(f).Length);
+            }
+        }
+        catch (Exception ex)
         {
-            var thumbnailFiles = Directory.GetFiles(_thumbnailsPath);
-            totalSize += thumbnailFiles.Sum(f => new FileInfo(f).Length);
+            _logger?.LogError(ex, "Failed to calculate storage size");
         }
 
         return totalSize;
@@ -188,23 +187,31 @@ public class FileStorageService : IFileStorageService
     {
         await Task.Run(() =>
         {
-            if (Directory.Exists(_attachmentsPath))
+            try
             {
-                foreach (var file in Directory.GetFiles(_attachmentsPath))
+                if (Directory.Exists(_attachmentsPath))
                 {
-                    File.Delete(file);
+                    foreach (var file in Directory.GetFiles(_attachmentsPath))
+                    {
+                        File.Delete(file);
+                    }
                 }
-            }
 
-            if (Directory.Exists(_thumbnailsPath))
+                if (Directory.Exists(_thumbnailsPath))
+                {
+                    foreach (var file in Directory.GetFiles(_thumbnailsPath))
+                    {
+                        File.Delete(file);
+                    }
+                }
+
+                _logger?.LogWarning("All files cleared from storage");
+            }
+            catch (Exception ex)
             {
-                foreach (var file in Directory.GetFiles(_thumbnailsPath))
-                {
-                    File.Delete(file);
-                }
+                _logger?.LogError(ex, "Failed to clear all files");
+                throw new StorageException("Failed to clear all files", ex);
             }
-
-            _logger?.LogWarning("All files cleared from storage");
         });
     }
 }

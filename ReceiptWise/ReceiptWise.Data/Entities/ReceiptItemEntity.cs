@@ -4,6 +4,7 @@ using SQLite;
 
 /// <summary>
 /// SQLite entity for ReceiptItems table
+/// Note: Using double instead of decimal for SQLite compatibility on Android
 /// </summary>
 [Table("ReceiptItems")]
 public class ReceiptItemEntity
@@ -19,7 +20,8 @@ public class ReceiptItemEntity
 
     public int Quantity { get; set; }
 
-    public decimal UnitPrice { get; set; }
+    // Changed from decimal to double for SQLite Android compatibility
+    public double UnitPrice { get; set; }
 
-    public decimal TotalPrice { get; set; }
+    public double TotalPrice { get; set; }
 }

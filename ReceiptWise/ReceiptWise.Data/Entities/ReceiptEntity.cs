@@ -1,7 +1,6 @@
 ﻿namespace ReceiptWise.Data.Entities;
 
 using SQLite;
-using ReceiptWise.Core.Enums;
 
 /// <summary>
 /// SQLite entity for Receipt table
@@ -17,17 +16,17 @@ public class ReceiptEntity
 
     public DateTime TransactionDate { get; set; }
 
-    public decimal Total { get; set; }
+    public double Total { get; set; }
 
-    public decimal Tax { get; set; }
+    public double Tax { get; set; }
 
-    public decimal Subtotal { get; set; }
+    public double Subtotal { get; set; }
 
-    public int Currency { get; set; } // Stored as int (enum)
+    public int Currency { get; set; }
 
-    public int Category { get; set; } // Stored as int (enum)
+    public int Category { get; set; }
 
-    public int ExtractionStatus { get; set; } // Stored as int (enum)
+    public int ExtractionStatus { get; set; }
 
     [MaxLength(1000)]
     public string? Notes { get; set; }
@@ -36,9 +35,9 @@ public class ReceiptEntity
 
     public DateTime? ModifiedAt { get; set; }
 
-    // Ignored navigation properties (loaded separately)
+    // Navigation properties - marked with Ignore and nullable
     [Ignore]
-    public List<ReceiptItemEntity> Items { get; set; } = new();
+    public List<ReceiptItemEntity>? Items { get; set; }
 
     [Ignore]
     public AttachmentEntity? Attachment { get; set; }

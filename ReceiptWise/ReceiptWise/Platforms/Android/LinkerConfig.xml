@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+  <!-- Preserve all SQLite attributes and types -->
+  <assembly fullname="SQLite-net">
+    <type fullname="*" preserve="all"/>
+  </assembly>
+
+  <assembly fullname="SQLitePCLRaw.core">
+    <type fullname="*" preserve="all"/>
+  </assembly>
+
+  <assembly fullname="SQLitePCLRaw.batteries_v2">
+    <type fullname="*" preserve="all"/>
+  </assembly>
+
+  <assembly fullname="SQLitePCLRaw.provider.e_sqlite3">
+    <type fullname="*" preserve="all"/>
+  </assembly>
+
+  <!-- Preserve all entity classes -->
+  <assembly fullname="ReceiptWise.Data">
+    <namespace fullname="ReceiptWise.Data.Entities" preserve="all"/>
+  </assembly>
+
+  <!-- Preserve all models and DTOs -->
+  <assembly fullname="ReceiptWise.Core">
+    <namespace fullname="ReceiptWise.Core.Models" preserve="all"/>
+    <namespace fullname="ReceiptWise.Core.Models.DTOs" preserve="all"/>
+    <namespace fullname="ReceiptWise.Core.Enums" preserve="all"/>
+  </assembly>
+</linker>

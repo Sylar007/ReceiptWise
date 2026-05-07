@@ -10,5 +10,10 @@ public partial class AppShell : Shell
 
         // Register routes for navigation
         Routing.RegisterRoute(nameof(ReceiptDetailPage), typeof(ReceiptDetailPage));
+        Routing.RegisterRoute(nameof(WarrantyPage), typeof(WarrantyPage));
+        // Register navigation routes for pages not in TabBar
+        Routing.RegisterRoute(nameof(CaptureReceiptPage), typeof(CaptureReceiptPage));
+        Routing.RegisterRoute(nameof(ReceiptDetailPage), typeof(ReceiptDetailPage));
+        //Routing.RegisterRoute(nameof(ReceiptFilterPage), typeof(ReceiptFilterPage));
     }
 }

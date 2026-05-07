@@ -2,26 +2,214 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ReceiptWise.App.ViewModels"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
              x:Class="ReceiptWise.App.Views.InsightsPage"
              Title="{Binding Title}"
              x:DataType="vm:InsightsViewModel">
 
-    <VerticalStackLayout 
-        Padding="20" 
-        Spacing="20"
-        VerticalOptions="Center">
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior
+            xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+            EventName="Appearing"
+            Command="{Binding LoadInsightsCommand}" />
+    </ContentPage.Behaviors>
 
-        <Label 
-            Text="📊 Spending Insights"
-            FontSize="28"
-            FontAttributes="Bold"
-            HorizontalOptions="Center" />
+    <ContentPage.ToolbarItems>
+        <ToolbarItem 
+            Text="Export"
+            IconImageSource="export.png"
+            Command="{Binding ExportInsightsCommand}" />
+    </ContentPage.ToolbarItems>
 
-        <Label 
-            Text="Charts and analytics coming in Milestone 7"
-            FontSize="16"
-            TextColor="Gray"
-            HorizontalOptions="Center" />
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
 
-    </VerticalStackLayout>
+            <!-- Period Selector -->
+            <ScrollView Orientation="Horizontal">
+                <HorizontalStackLayout Spacing="8">
+                    <Button Text="This Week" Command="{Binding ChangePeriodCommand}" CommandParameter="This Week" 
+                            BackgroundColor="{StaticResource Secondary}" FontSize="12" Padding="15,8" CornerRadius="15" />
+                    <Button Text="This Month" Command="{Binding ChangePeriodCommand}" CommandParameter="This Month" 
+                            BackgroundColor="{StaticResource Primary}" FontSize="12" Padding="15,8" CornerRadius="15" />
+                    <Button Text="Last 30 Days" Command="{Binding ChangePeriodCommand}" CommandParameter="Last 30 Days" 
+                            BackgroundColor="{StaticResource Secondary}" FontSize="12" Padding="15,8" CornerRadius="15" />
+                    <Button Text="Last 90 Days" Command="{Binding ChangePeriodCommand}" CommandParameter="Last 90 Days" 
+                            BackgroundColor="{StaticResource Secondary}" FontSize="12" Padding="15,8" CornerRadius="15" />
+                    <Button Text="This Year" Command="{Binding ChangePeriodCommand}" CommandParameter="This Year" 
+                            BackgroundColor="{StaticResource Secondary}" FontSize="12" Padding="15,8" CornerRadius="15" />
+                </HorizontalStackLayout>
+            </ScrollView>
+
+            <!-- Summary Cards -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="10">
+
+                <!-- Total Spent Card -->
+                <Frame Grid.Row="0" Grid.Column="0" Padding="15" CornerRadius="10" HasShadow="True" 
+                       BackgroundColor="{StaticResource Primary}">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Total Spent" FontSize="12" TextColor="White" Opacity="0.8" />
+                        <Label Text="{Binding CurrentMonthTotal, StringFormat='${0:F2}'}" 
+                               FontSize="24" FontAttributes="Bold" TextColor="White" />
+                        <Label Text="{Binding CurrentMonthReceiptCount, StringFormat='{0} receipts'}" 
+                               FontSize="10" TextColor="White" Opacity="0.8" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Average Card -->
+                <Frame Grid.Row="0" Grid.Column="1" Padding="15" CornerRadius="10" HasShadow="True" 
+                       BackgroundColor="{StaticResource Secondary}">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Avg/Receipt" FontSize="12" TextColor="{StaticResource Primary}" />
+                        <Label Text="{Binding AverageReceiptAmount, StringFormat='${0:F2}'}" 
+                               FontSize="24" FontAttributes="Bold" TextColor="{StaticResource Primary}" />
+                        <Label Text="{Binding DailyAverage, StringFormat='${0:F2}/day'}" 
+                               FontSize="10" TextColor="{StaticResource Primary}" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Top Category Card -->
+                <Frame Grid.Row="1" Grid.Column="0" Padding="15" CornerRadius="10" HasShadow="True" 
+                       BackgroundColor="#4CAF50">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Top Category" FontSize="12" TextColor="White" Opacity="0.8" />
+                        <Label Text="{Binding TopCategory}" 
+                               FontSize="18" FontAttributes="Bold" TextColor="White" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Month-over-Month Card -->
+                <Frame Grid.Row="1" Grid.Column="1" Padding="15" CornerRadius="10" HasShadow="True" 
+                       BackgroundColor="{Binding IsIncreaseFromLastMonth, Converter={StaticResource TrendColorConverter}}">
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="vs Last Month" FontSize="12" TextColor="White" Opacity="0.8" />
+                        <Label Text="{Binding MonthOverMonthChange, StringFormat='${0:F2}'}" 
+                               FontSize="18" FontAttributes="Bold" TextColor="White" />
+                        <Label Text="{Binding IsIncreaseFromLastMonth, Converter={StaticResource TrendLabelConverter}}" 
+                               FontSize="10" TextColor="White" Opacity="0.8" />
+                    </VerticalStackLayout>
+                </Frame>
+            </Grid>
+
+            <!-- Category Breakdown Chart -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Category Breakdown" FontSize="18" FontAttributes="Bold" />
+
+                    <lvc:PieChart 
+                        Series="{Binding CategoryChartSeries}"
+                        HeightRequest="250"
+                        LegendPosition="Bottom"
+                        LegendTextSize="12" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Monthly Trend Chart -->
+            <Frame Padding="15" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="6-Month Spending Trend" FontSize="18" FontAttributes="Bold" />
+
+                    <lvc:CartesianChart 
+                        Series="{Binding TrendChartSeries}"
+                        XAxes="{Binding TrendChartXAxes}"
+                        HeightRequest="200" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Category List -->
+            <!--<Frame Padding="15" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Spending by Category" FontSize="18" FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding CategoryInsights}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="12" Margin="0,3" CornerRadius="8" 
+                                       BackgroundColor="{StaticResource Gray100}" HasShadow="False">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+
+                                        <Label Grid.Column="0" 
+                                               Text="{Binding Category}" 
+                                               FontSize="14" FontAttributes="Bold" 
+                                               VerticalOptions="Center" />
+
+                                        <ProgressBar Grid.Column="1" 
+                                                     Progress="{Binding Percentage, Converter={StaticResource PercentageToProgressConverter}}"
+                                                     ProgressColor="{StaticResource Primary}"
+                                                     VerticalOptions="Center" />
+
+                                        <Label Grid.Column="2" 
+                                               Text="{Binding Percentage, StringFormat='{0:F1}%'}" 
+                                               FontSize="12" TextColor="Gray" 
+                                               VerticalOptions="Center" />
+
+                                        <Label Grid.Column="3" 
+                                               Text="{Binding TotalSpent, StringFormat='${0:F2}'}" 
+                                               FontSize="14" FontAttributes="Bold" 
+                                               TextColor="{StaticResource Primary}"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>-->
+
+            <!-- Top Merchants -->
+            <!--<Frame Padding="15" CornerRadius="10" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Top Merchants" FontSize="18" FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding TopMerchants}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="12" Margin="0,3" CornerRadius="8" 
+                                       BackgroundColor="{StaticResource Secondary}" HasShadow="False">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+
+                                        <Label Grid.Column="0" 
+                                               Text="{Binding ReceiptCount}" 
+                                               FontSize="20" FontAttributes="Bold" 
+                                               TextColor="{StaticResource Primary}"
+                                               VerticalOptions="Center" />
+
+                                        <VerticalStackLayout Grid.Column="1">
+                                            <Label Text="{Binding MerchantName}" 
+                                                   FontSize="14" FontAttributes="Bold" />
+                                            <Label Text="{Binding Category}" 
+                                                   FontSize="12" TextColor="Gray" />
+                                        </VerticalStackLayout>
+
+                                        <Label Grid.Column="2" 
+                                               Text="{Binding TotalSpent, StringFormat='${0:F2}'}" 
+                                               FontSize="16" FontAttributes="Bold" 
+                                               TextColor="{StaticResource Primary}"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>-->
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator 
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                Color="{StaticResource Primary}"
+                HeightRequest="50" />
+
+            <!-- Error Message -->
+            <Frame 
+                IsVisible="{Binding HasError}"
+                BackgroundColor="#FFEBEE"
+                BorderColor="#F44336"
+                Padding="10"
+                CornerRadius="5">
+                <Label Text="{Binding ErrorMessage}" TextColor="#D32F2F" />
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

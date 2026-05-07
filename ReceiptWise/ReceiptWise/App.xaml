@@ -13,6 +13,14 @@
             <!-- Value Converters -->
             <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+            <converters:EditingBackgroundConverter x:Key="EditingBackgroundConverter" />
+            <converters:PercentageToProgressConverter x:Key="PercentageToProgressConverter" />
+            <converters:TrendColorConverter x:Key="TrendColorConverter" />
+            <converters:TrendLabelConverter x:Key="TrendLabelConverter" />
+            <!-- Add to existing converters -->
+            <converters:WarrantyStatusColorConverter x:Key="WarrantyStatusColorConverter" />
+            <converters:WarrantyStatusTextConverter x:Key="WarrantyStatusTextConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

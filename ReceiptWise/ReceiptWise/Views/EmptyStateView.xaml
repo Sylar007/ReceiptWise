@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ReceiptWise.App.Controls.EmptyStateView"
+             x:Name="this">
+
+    <Frame Padding="40" CornerRadius="10" HasShadow="True"
+           BackgroundColor="{StaticResource Gray100}"
+           Margin="20">
+        <VerticalStackLayout Spacing="15" HorizontalOptions="Center">
+
+            <Label Text="{Binding Source={x:Reference this}, Path=Icon}"
+                   FontSize="80"
+                   HorizontalOptions="Center" />
+
+            <Label Text="{Binding Source={x:Reference this}, Path=Title}"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center" />
+
+            <Label Text="{Binding Source={x:Reference this}, Path=Message}"
+                   FontSize="14"
+                   TextColor="Gray"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   LineBreakMode="WordWrap" />
+
+            <Button Text="{Binding Source={x:Reference this}, Path=ActionText}"
+                    Command="{Binding Source={x:Reference this}, Path=ActionCommand}"
+                    IsVisible="{Binding Source={x:Reference this}, Path=ShowAction}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    Margin="0,10,0,0" />
+
+        </VerticalStackLayout>
+    </Frame>
+</ContentView>

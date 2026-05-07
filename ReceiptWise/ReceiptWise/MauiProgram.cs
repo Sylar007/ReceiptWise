@@ -13,6 +13,7 @@ using ReceiptWise.Services.AI;
 using ReceiptWise.Services.Business;
 using ReceiptWise.Services.Configuration;
 using SkiaSharp.Views.Maui.Controls.Hosting;
+using ReceiptWise.App.Services;
 
 namespace ReceiptWise.App;
 
@@ -35,6 +36,9 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
+        // Initialize SQLitePCL
+        SQLitePCL.Batteries_V2.Init();
+
         // Register Configuration
         var azureConfig = LoadAzureConfiguration();
         builder.Services.AddSingleton(azureConfig);
@@ -56,8 +60,35 @@ public static class MauiProgram
         builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
         builder.Services.AddSingleton<IReceiptExtractionService, AzureDocumentIntelligenceService>();
 
+        // Register AI Services
+        builder.Services.AddSingleton<CategoryMappingEngine>();
+        builder.Services.AddSingleton<AzureOpenAIService>();
+        builder.Services.AddSingleton<ICategorySuggestionService, CategorySuggestionService>();
+
+        // Register Insights Service
+        builder.Services.AddSingleton<InsightsService>();
+
+        // Register Export and Backup Services
+        builder.Services.AddSingleton<ExportService>();
+        builder.Services.AddSingleton<BackupService>();
+
         // Register Business Services
         builder.Services.AddSingleton<ReceiptProcessingService>();
+
+        // Register Notification Service
+        builder.Services.AddSingleton<INotificationService, NotificationService>();
+
+        // Register Optimization and Security Services
+        builder.Services.AddSingleton<ImageOptimizationService>();
+        builder.Services.AddSingleton<SecureStorageService>();
+        builder.Services.AddSingleton<ErrorHandlingService>();
+        builder.Services.AddSingleton<PerformanceMonitoringService>();
+
+        // Register ViewModels
+        builder.Services.AddTransient<WarrantyViewModel>();
+
+        // Register Views
+        builder.Services.AddTransient<WarrantyPage>();
 
         // Register Helpers
         builder.Services.AddSingleton<ImageHelper>();
@@ -82,18 +113,30 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsPage>();
 
         var app = builder.Build();
-        InitializeDatabaseAsync(app.Services).Wait();
+
+        // REMOVE THIS LINE - IT'S BLOCKING THE UI THREAD:
+        // InitializeDatabaseAsync(app.Services).Wait();
+
+        // Instead, initialize database in background
+        Task.Run(async () =>
+        {
+            try
+            {
+                await InitializeDatabaseAsync(app.Services);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Database initialization failed: {ex.Message}");
+            }
+        });
 
         return app;
     }
 
-    /// <summary>
-    /// Load Azure AI configuration from secure storage or environment
-    /// </summary>
     private static AzureAIConfiguration LoadAzureConfiguration()
     {
-        // In production, load from SecureStorage or backend API
-        // For development, use Preferences or environment variables
+        // Try to load from Preferences first (for backward compatibility)
+        // In production, use SecureStorageService
 
         var config = new AzureAIConfiguration
         {
@@ -121,27 +164,78 @@ public static class MauiProgram
     {
         try
         {
+            System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════════╗");
+            System.Diagnostics.Debug.WriteLine("║       Database Initialization Started                    ║");
+            System.Diagnostics.Debug.WriteLine("╚══════════════════════════════════════════════════════════╝");
+            
+            System.Diagnostics.Debug.WriteLine("→ Resolving ReceiptWiseDatabase...");
             var database = services.GetRequiredService<ReceiptWiseDatabase>();
+            System.Diagnostics.Debug.WriteLine("✓ Database service resolved");
+            
+            System.Diagnostics.Debug.WriteLine("→ Initializing database...");
             await database.InitializeAsync();
+            System.Diagnostics.Debug.WriteLine("✓ Database initialized");
 
+            System.Diagnostics.Debug.WriteLine("→ Resolving ICategoryRepository...");
             var categoryRepo = services.GetRequiredService<ICategoryRepository>();
+            System.Diagnostics.Debug.WriteLine("✓ Category repository resolved");
+            
+            System.Diagnostics.Debug.WriteLine("→ Initializing default categories...");
             await categoryRepo.InitializeDefaultCategoriesAsync();
+            System.Diagnostics.Debug.WriteLine("✓ Default categories initialized");
 
 #if DEBUG
+            System.Diagnostics.Debug.WriteLine("→ Resolving SampleDataSeeder...");
             var seeder = services.GetRequiredService<SampleDataSeeder>();
+            System.Diagnostics.Debug.WriteLine("✓ Seeder resolved");
+            
+            System.Diagnostics.Debug.WriteLine("→ Resolving IReceiptRepository...");
             var receiptRepo = services.GetRequiredService<IReceiptRepository>();
+            System.Diagnostics.Debug.WriteLine("✓ Receipt repository resolved");
+            
+            System.Diagnostics.Debug.WriteLine("→ Getting receipt count...");
             var count = await receiptRepo.GetCountAsync();
+            System.Diagnostics.Debug.WriteLine($"✓ Existing receipt count: {count}");
 
             if (count == 0)
             {
+                System.Diagnostics.Debug.WriteLine("→ Seeding sample receipts (15)...");
                 await seeder.SeedSampleReceiptsAsync(15);
                 var logger = services.GetService<ILogger<ReceiptWiseDatabase>>();
                 logger?.LogInformation("Seeded 15 sample receipts for development");
+                System.Diagnostics.Debug.WriteLine("✓ Sample receipts seeded successfully");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("✓ Skipping seeding (data exists)");
             }
 #endif
+            System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════════╗");
+            System.Diagnostics.Debug.WriteLine("║    Database Initialization Complete ✓                    ║");
+            System.Diagnostics.Debug.WriteLine("╚══════════════════════════════════════════════════════════╝\n");
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine("\n╔══════════════════════════════════════════════════════════╗");
+            System.Diagnostics.Debug.WriteLine("║    DATABASE INITIALIZATION FAILED ✗                      ║");
+            System.Diagnostics.Debug.WriteLine("╠══════════════════════════════════════════════════════════╣");
+            System.Diagnostics.Debug.WriteLine($"║ Exception Type: {ex.GetType().FullName}");
+            System.Diagnostics.Debug.WriteLine($"║ Message: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine("╠══════════════════════════════════════════════════════════╣");
+            System.Diagnostics.Debug.WriteLine("║ Stack Trace:");
+            System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+            
+            if (ex.InnerException != null)
+            {
+                System.Diagnostics.Debug.WriteLine("╠══════════════════════════════════════════════════════════╣");
+                System.Diagnostics.Debug.WriteLine($"║ Inner Exception: {ex.InnerException.GetType().FullName}");
+                System.Diagnostics.Debug.WriteLine($"║ Message: {ex.InnerException.Message}");
+                System.Diagnostics.Debug.WriteLine("║ Stack Trace:");
+                System.Diagnostics.Debug.WriteLine(ex.InnerException.StackTrace);
+            }
+            
+            System.Diagnostics.Debug.WriteLine("╚══════════════════════════════════════════════════════════╝\n");
+            
             var logger = services.GetService<ILogger<ReceiptWiseDatabase>>();
             logger?.LogError(ex, "Failed to initialize database");
             throw;

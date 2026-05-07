@@ -17,6 +17,7 @@ using ReceiptWise.Services.Helpers;
 public class ReceiptProcessingService
 {
     private readonly IReceiptExtractionService _extractionService;
+    private readonly ICategorySuggestionService _categoryService;
     private readonly IFileStorageService _fileStorageService;
     private readonly IReceiptRepository _receiptRepository;
     private readonly IAttachmentRepository _attachmentRepository;
@@ -24,12 +25,14 @@ public class ReceiptProcessingService
 
     public ReceiptProcessingService(
         IReceiptExtractionService extractionService,
+        ICategorySuggestionService categoryService,
         IFileStorageService fileStorageService,
         IReceiptRepository receiptRepository,
         IAttachmentRepository attachmentRepository,
         ILogger<ReceiptProcessingService>? logger = null)
     {
         _extractionService = extractionService;
+        _categoryService = categoryService;
         _fileStorageService = fileStorageService;
         _receiptRepository = receiptRepository;
         _attachmentRepository = attachmentRepository;
@@ -80,15 +83,25 @@ public class ReceiptProcessingService
                 return result;
             }
 
-            // Step 3: Create receipt from extracted data
+            // Step 3: Categorize receipt
+            result.Status = ProcessingStatus.Categorizing;
+            var category = await CategorizeReceiptAsync(
+                extractionResult.MerchantName,
+                extractionResult.Items.Select(i => i.Description),
+                cancellationToken);
+
+            result.SuggestedCategory = category.SuggestedCategory;
+            result.CategoryConfidence = category.Confidence;
+
+            // Step 4: Create receipt from extracted data
             result.Status = ProcessingStatus.Saving;
-            var receipt = MapToReceipt(extractionResult);
+            var receipt = MapToReceipt(extractionResult, category);
             receipt.ExtractionStatus = ExtractionStatus.Completed;
 
             var receiptId = await _receiptRepository.AddAsync(receipt, cancellationToken);
             result.ReceiptId = receiptId;
 
-            // Step 4: Link attachment
+            // Step 5: Link attachment
             var attachment = new Attachment
             {
                 ReceiptId = receiptId,
@@ -104,9 +117,10 @@ public class ReceiptProcessingService
             result.Success = true;
 
             _logger?.LogInformation(
-                "Receipt processing completed successfully. ID={ReceiptId}, Merchant={Merchant}",
+                "Receipt processing completed successfully. ID={ReceiptId}, Merchant={Merchant}, Category={Category}",
                 receiptId,
-                receipt.MerchantName);
+                receipt.MerchantName,
+                receipt.Category);
 
             return result;
         }
@@ -117,6 +131,47 @@ public class ReceiptProcessingService
             result.Success = false;
             result.ErrorMessage = ex.Message;
             return result;
+        }
+    }
+
+    /// <summary>
+    /// Categorize receipt using intelligent suggestion service
+    /// </summary>
+    private async Task<CategorySuggestionDto> CategorizeReceiptAsync(
+        string merchantName,
+        IEnumerable<string> itemDescriptions,
+        CancellationToken cancellationToken)
+    {
+        _logger?.LogDebug("Categorizing receipt for merchant: {Merchant}", merchantName);
+
+        try
+        {
+            // Try AI categorization (includes rule-based fallback)
+            var suggestion = await _categoryService.SuggestCategoryByAIAsync(
+                merchantName,
+                itemDescriptions,
+                cancellationToken);
+
+            _logger?.LogInformation(
+                "Category suggestion: {Category} (confidence: {Confidence:P0}, reasoning: {Reasoning})",
+                suggestion.SuggestedCategory,
+                suggestion.Confidence,
+                suggestion.Reasoning);
+
+            return suggestion;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Categorization failed, using rule-based fallback");
+
+            // Fallback to simple rule-based
+            var category = _categoryService.SuggestCategoryByRules(merchantName);
+            return new CategorySuggestionDto
+            {
+                SuggestedCategory = category,
+                Confidence = 0.5f,
+                Reasoning = "Fallback to rule-based categorization"
+            };
         }
     }
 
@@ -161,8 +216,20 @@ public class ReceiptProcessingService
     /// <summary>
     /// Map extraction result to receipt domain model
     /// </summary>
-    private Receipt MapToReceipt(ExtractionResultDto dto)
+    private Receipt MapToReceipt(ExtractionResultDto dto, CategorySuggestionDto categorySuggestion)
     {
+        var notes = new List<string>();
+
+        if (dto.Confidence < 0.7f)
+        {
+            notes.Add($"Low extraction confidence ({dto.Confidence:P0})");
+        }
+
+        if (categorySuggestion.Confidence < 0.7f)
+        {
+            notes.Add($"Category suggestion: {categorySuggestion.Reasoning}");
+        }
+
         var receipt = new Receipt
         {
             MerchantName = dto.MerchantName,
@@ -171,9 +238,9 @@ public class ReceiptProcessingService
             Tax = dto.Tax,
             Subtotal = dto.Subtotal,
             Currency = dto.Currency,
-            Category = ReceiptCategory.Other, // Will be set by categorization in Milestone 5
+            Category = categorySuggestion.SuggestedCategory,
             ExtractionStatus = ExtractionStatus.Completed,
-            Notes = dto.Confidence < 0.7f ? $"Low confidence extraction ({dto.Confidence:P0})" : null
+            Notes = notes.Any() ? string.Join(". ", notes) : null
         };
 
         // Map line items
@@ -200,6 +267,8 @@ public class ProcessingResult
     public int ReceiptId { get; set; }
     public string? FilePath { get; set; }
     public ExtractionResultDto? ExtractionResult { get; set; }
+    public ReceiptCategory SuggestedCategory { get; set; }
+    public float CategoryConfidence { get; set; }
 }
 
 public enum ProcessingStatus
@@ -207,6 +276,7 @@ public enum ProcessingStatus
     NotStarted,
     SavingFile,
     Extracting,
+    Categorizing,
     Saving,
     Completed,
     ExtractionFailed,

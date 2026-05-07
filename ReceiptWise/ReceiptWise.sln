@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		AZURE_SETUP.md = AZURE_SETUP.md
 		Database.md = Database.md
 		Permission.md = Permission.md
+		SECURITY.md = SECURITY.md
 	EndProjectSection
 EndProject
 Global

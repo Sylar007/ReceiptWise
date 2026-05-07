@@ -2,10 +2,12 @@
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ReceiptWise.Core.Interfaces.Services;
 using ReceiptWise.Core.Interfaces.Repositories;
+using ReceiptWise.Core.Interfaces.Services;
+using ReceiptWise.Data.Repositories;
 using ReceiptWise.Services.Business;
 using ReceiptWise.Services.Helpers;
+using ReceiptWise.Services.Infrastructure;
 
 /// <summary>
 /// ViewModel for Capture Receipt page
@@ -13,6 +15,54 @@ using ReceiptWise.Services.Helpers;
 /// </summary>
 public partial class CaptureReceiptViewModel : BaseViewModel
 {
+    //private readonly ReceiptProcessingService _processingService;
+    //private readonly ImageHelper _imageHelper;
+    //private readonly IFileStorageService _fileStorageService;
+    //private readonly IReceiptRepository _receiptRepository;
+    //private readonly IAttachmentRepository _attachmentRepository;
+
+    //[ObservableProperty]
+    //private ImageSource? _capturedImage;
+
+    //[ObservableProperty]
+    //private string? _capturedFilePath;
+
+    //[ObservableProperty]
+    //private FileResult? _capturedFile;
+
+    //[ObservableProperty]
+    //private bool _hasImage;
+
+    //[ObservableProperty]
+    //private string _statusMessage = "Ready to capture";
+
+    //[ObservableProperty]
+    //private bool _isProcessing;
+
+    //[ObservableProperty]
+    //private int _processingProgress; // 0-100
+
+    //private readonly ImageOptimizationService _imageOptimizationService;
+
+    //public CaptureReceiptViewModel(
+    //    IFileStorageService fileStorageService,
+    //    IReceiptRepository receiptRepository,
+    //    IAttachmentRepository attachmentRepository,
+    //    ImageHelper imageHelper,
+    //    ReceiptProcessingService processingService,
+    //    ImageOptimizationService imageOptimizationService) // Add this
+    //{
+    //    _fileStorageService = fileStorageService;
+    //    _receiptRepository = receiptRepository;
+    //    _attachmentRepository = attachmentRepository;
+    //    _imageHelper = imageHelper;
+    //    _processingService = processingService;
+    //    _imageOptimizationService = imageOptimizationService; // Add this
+    //    Title = "Capture Receipt";
+    //}
+    private readonly IFileStorageService _fileStorageService;
+    private readonly IReceiptRepository _receiptRepository;
+    private readonly IAttachmentRepository _attachmentRepository;
     private readonly ReceiptProcessingService _processingService;
     private readonly ImageHelper _imageHelper;
 
@@ -37,12 +87,22 @@ public partial class CaptureReceiptViewModel : BaseViewModel
     [ObservableProperty]
     private int _processingProgress; // 0-100
 
+    private readonly ImageOptimizationService _imageOptimizationService;
+
     public CaptureReceiptViewModel(
-        ReceiptProcessingService processingService,
-        ImageHelper imageHelper)
+        IFileStorageService fileStorageService,
+        IReceiptRepository receiptRepository,
+        IAttachmentRepository attachmentRepository,
+        ImageHelper imageHelper,
+        ImageOptimizationService imageOptimizationService,
+        ReceiptProcessingService processingService) // Add this parameter
     {
-        _processingService = processingService;
+        _fileStorageService = fileStorageService;
+        _receiptRepository = receiptRepository;
+        _attachmentRepository = attachmentRepository;
         _imageHelper = imageHelper;
+        _imageOptimizationService = imageOptimizationService;
+        _processingService = processingService; // Add this assignment
         Title = "Capture Receipt";
     }
 
@@ -147,6 +207,8 @@ public partial class CaptureReceiptViewModel : BaseViewModel
         }
     }
 
+    // Update the ProcessCapturedFileAsync method to use optimized images
+
     private async Task ProcessCapturedFileAsync(FileResult fileResult)
     {
         try
@@ -163,6 +225,16 @@ public partial class CaptureReceiptViewModel : BaseViewModel
                 SetError("Invalid image file");
                 StatusMessage = "Invalid file";
                 return;
+            }
+
+            // Auto-rotate image
+            if (mimeType.StartsWith("image/"))
+            {
+                StatusMessage = "Optimizing image...";
+                stream = await _imageOptimizationService.AutoRotateImageAsync(stream);
+
+                // Compress image
+                stream = await _imageOptimizationService.CompressImageAsync(stream);
             }
 
             // Store for preview
